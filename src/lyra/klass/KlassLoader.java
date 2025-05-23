@@ -1,4 +1,4 @@
-package jvm.klass;
+package lyra.klass;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -6,10 +6,10 @@ import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.List;
 
-import jvm.filesystem.Packages;
-import jvm.filesystem.UriPath;
-import jvm.lang.JavaLang;
-import jvm.lang.Reflection;
+import lyra.filesystem.Packages;
+import lyra.filesystem.UriPath;
+import lyra.lang.JavaLang;
+import lyra.lang.Reflection;
 
 public class KlassLoader {
 	private static Method ClassLoader_m_defineClass;

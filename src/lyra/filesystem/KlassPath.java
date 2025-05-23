@@ -1,4 +1,4 @@
-package jvm.filesystem;
+package lyra.filesystem;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -6,7 +6,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-import jvm.lang.JavaLang;
+import lyra.lang.JavaLang;
 
 public class KlassPath {
 	public static final String ClassExtensionName = ".class";

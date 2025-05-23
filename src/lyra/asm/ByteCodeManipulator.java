@@ -1,4 +1,4 @@
-package jvm.asm;
+package lyra.asm;
 
 import java.util.ArrayList;
 import java.util.Arrays;

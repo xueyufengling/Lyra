@@ -1,4 +1,4 @@
-package jvm.agent;
+package lyra.agent;
 
 import java.io.IOException;
 
@@ -7,8 +7,8 @@ import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 
-import jvm.klass.ObjectManipulator;
-import jvm.vm.VmManipulator;
+import lyra.klass.ObjectManipulator;
+import lyra.vm.VmManipulator;
 
 /**
  * Java Agent相关功能

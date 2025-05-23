@@ -1,4 +1,4 @@
-package jvm.klass;
+package lyra.klass;
 
 // @formatter:off
 /**

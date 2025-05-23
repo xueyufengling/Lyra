@@ -1,4 +1,4 @@
-package jvm.filesystem;
+package lyra.filesystem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,9 +14,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.stream.Stream;
 
-import jvm.filesystem.jar.JarEntryData;
-import jvm.filesystem.jar.JarEntryOperation;
-import jvm.filesystem.jar.JarFiles;
+import lyra.filesystem.jar.JarEntryData;
+import lyra.filesystem.jar.JarEntryOperation;
+import lyra.filesystem.jar.JarFiles;
 
 public class FileSystem {
 

@@ -1,4 +1,4 @@
-package jvm.lang;
+package lyra.lang;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 
-import jvm.klass.ObjectManipulator;
+import lyra.klass.ObjectManipulator;
 import sun.misc.Unsafe;
 
 public class InternalUnsafe {

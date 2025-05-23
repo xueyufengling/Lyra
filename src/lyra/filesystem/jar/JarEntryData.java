@@ -1,4 +1,4 @@
-package jvm.filesystem.jar;
+package lyra.filesystem.jar;
 
 import java.util.jar.JarEntry;
 

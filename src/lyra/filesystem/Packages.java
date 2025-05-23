@@ -1,9 +1,9 @@
-package jvm.filesystem;
+package lyra.filesystem;
 
 import java.util.List;
 
-import jvm.filesystem.jar.JarFiles;
-import jvm.lang.JavaLang;
+import lyra.filesystem.jar.JarFiles;
+import lyra.lang.JavaLang;
 
 public class Packages {
 	public static List<String> getClassNamesInPackage(Class<?> any_class_in_package, UriPath.Resolver resolver, String package_name, boolean include_subpackage) {

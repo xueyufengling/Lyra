@@ -1,10 +1,10 @@
-package jvm.filesystem;
+package lyra.filesystem;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import jvm.lang.JavaLang;
+import lyra.lang.JavaLang;
 
 public class LocalFiles {
 	public static List<String> getClassNamesInLocalPackage(Class<?> any_class_in_package, UriPath.Resolver resolver, String package_name, boolean include_subpackage) {

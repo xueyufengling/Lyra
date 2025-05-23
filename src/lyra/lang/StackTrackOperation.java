@@ -1,4 +1,4 @@
-package jvm.lang;
+package lyra.lang;
 
 @FunctionalInterface
 public interface StackTrackOperation {

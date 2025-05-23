@@ -1,4 +1,4 @@
-package jvm.klass;
+package lyra.klass;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AccessibleObject;
@@ -6,9 +6,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import jvm.lang.Handles;
-import jvm.lang.InternalUnsafe;
-import jvm.lang.Reflection;
+import lyra.lang.Handles;
+import lyra.lang.InternalUnsafe;
+import lyra.lang.Reflection;
 
 /**
  * 核心的类成员修改、访问和方法调用类，支持修改final、record成员变量。<br>

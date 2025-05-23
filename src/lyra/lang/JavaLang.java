@@ -1,4 +1,4 @@
-package jvm.lang;
+package lyra.lang;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import jvm.klass.ObjectManipulator;
+import lyra.klass.ObjectManipulator;
 
 /**
  * 修改反射安全限制等

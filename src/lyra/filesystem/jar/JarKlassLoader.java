@@ -1,10 +1,10 @@
-package jvm.filesystem.jar;
+package lyra.filesystem.jar;
 
 import java.io.InputStream;
 
-import jvm.filesystem.FileSystem;
-import jvm.klass.KlassLoader;
-import jvm.lang.JavaLang;
+import lyra.filesystem.FileSystem;
+import lyra.klass.KlassLoader;
+import lyra.lang.JavaLang;
 
 public class JarKlassLoader {
 	public static String parentClassLoaderField = KlassLoader.default_parent_field_name;

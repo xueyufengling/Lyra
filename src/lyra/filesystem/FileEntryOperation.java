@@ -1,4 +1,4 @@
-package jvm.filesystem;
+package lyra.filesystem;
 
 import java.nio.file.Path;
 

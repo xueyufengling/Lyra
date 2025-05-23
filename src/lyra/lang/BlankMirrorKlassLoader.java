@@ -1,6 +1,6 @@
-package jvm.lang;
+package lyra.lang;
 
-import jvm.filesystem.jar.JarFiles;
+import lyra.filesystem.jar.JarFiles;
 
 public class BlankMirrorKlassLoader {
 

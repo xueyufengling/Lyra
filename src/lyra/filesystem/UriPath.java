@@ -1,4 +1,4 @@
-package jvm.filesystem;
+package lyra.filesystem;
 
 public class UriPath {
 	public final String filesystem_path;

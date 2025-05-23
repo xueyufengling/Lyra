@@ -1,4 +1,4 @@
-package jvm.filesystem.jar;
+package lyra.filesystem.jar;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,11 +12,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
-import jvm.filesystem.FileSystem;
-import jvm.filesystem.KlassPath;
-import jvm.filesystem.UriPath;
-import jvm.lang.JavaLang;
-import jvm.lang.Reflection;
+import lyra.filesystem.FileSystem;
+import lyra.filesystem.KlassPath;
+import lyra.filesystem.UriPath;
+import lyra.lang.JavaLang;
+import lyra.lang.Reflection;
 
 /**
  * jar文件的相关操作，任何操作都需要传入{@code any_class_in_jar}，即jar内的任意一个类。<br>

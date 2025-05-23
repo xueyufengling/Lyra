@@ -1,4 +1,4 @@
-package jvm.vm;
+package lyra.vm;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
@@ -9,12 +9,13 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Properties;
+
 import com.sun.management.HotSpotDiagnosticMXBean;
 //import jdk.internal.loader.BootLoader;
 
-import jvm.klass.ObjectManipulator;
-import jvm.lang.Handles;
-import jvm.lang.Reflection;
+import lyra.klass.ObjectManipulator;
+import lyra.lang.Handles;
+import lyra.lang.Reflection;
 
 /**
  * 管理JVM的相关功能
