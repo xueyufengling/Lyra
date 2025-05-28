@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import lyra.lang.Handles;
 import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
+import lyra.ntv.Klass;
 
 /**
  * 核心的类成员修改、访问和方法调用类，支持修改final、record成员变量。<br>
@@ -211,6 +212,16 @@ public abstract class ObjectManipulator {
 		return setLong(obj, Reflection.getField(obj, field), value);
 	}
 
+	public static Object getLong(Object obj, Field field) {
+		if (field == null)
+			return false;
+		return InternalUnsafe.getLong(obj, field);
+	}
+
+	public static Object getLong(Object obj, String field) {
+		return getLong(obj, Reflection.getField(obj, field));
+	}
+
 	public static boolean setBoolean(Object obj, Field field, boolean value) {
 		if (field == null)
 			return false;
@@ -233,6 +244,16 @@ public abstract class ObjectManipulator {
 		return setInt(obj, Reflection.getField(obj, field), value);
 	}
 
+	public static Object getInt(Object obj, Field field) {
+		if (field == null)
+			return false;
+		return InternalUnsafe.getInt(obj, field);
+	}
+
+	public static Object getInt(Object obj, String field) {
+		return getInt(obj, Reflection.getField(obj, field));
+	}
+
 	public static boolean setDouble(Object obj, Field field, double value) {
 		if (field == null)
 			return false;
@@ -253,5 +274,22 @@ public abstract class ObjectManipulator {
 
 	public static boolean setFloat(Object obj, String field, float value) {
 		return setFloat(obj, Reflection.getField(obj, field), value);
+	}
+
+	public static final Object cast(Object obj, long castTypeKlassWord) {
+		ObjectHeader.setKlassWord(obj, castTypeKlassWord);
+		return obj;
+	}
+
+	public static final Object cast(Object obj, Object castTypeObj) {
+		return cast(obj, ObjectHeader.getKlassWord(castTypeObj));
+	}
+
+	public static final Object cast(Object obj, Class<?> castType) {
+		return cast(obj, Klass.klassWord(castType));
+	}
+
+	public static final Object cast(Object obj, String castType) {
+		return cast(obj, Klass.klassWord(castType));
 	}
 }

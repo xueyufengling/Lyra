@@ -1,7 +1,10 @@
 package lyra.klass;
 
+import lyra.lang.InternalUnsafe;
+import lyra.vm.Vm;
+
 // @formatter:off
-/**
+/**Object Header由Mark Word和Klass Word组成<br>
  * ObjectHeader 32-bit JVM<br>
 * |----------------------------------------------------------------------------------------|--------------------|<br>
 * |                                    Object Header (64 bits)                             |        State       |<br>
@@ -36,7 +39,7 @@ package lyra.klass;
 * |                                                                     | lock:2 |    OOP to metadata object   |    Marked for GC   |<br>
 * |------------------------------------------------------------------------------|-----------------------------|--------------------|<br>
 * <br>
-* ObjectHeade 64-bit JVM UseCompressedOops=true<br>
+* ObjectHeader 64-bit JVM UseCompressedOops=true<br>
 * |--------------------------------------------------------------------------------------------------------------|--------------------|<br>
 * |                                            Object Header (96 bits)                                           |        State       |<br>
 * |--------------------------------------------------------------------------------|-----------------------------|--------------------|<br>
@@ -152,4 +155,76 @@ public class ObjectHeader {
 	public static final int PTR_TO_HEAVYWEIGHT_MONITOR_OFFSET_64C = MARKWORD_OFFSET_64C;
 	public static final int PTR_TO_HEAVYWEIGHT_MONITOR_LENGTH_64C = 62;
 
+	/**
+	 * Klass Word的偏移量，单位bit
+	 */
+	public static final int KLASS_WORD_OFFSET;
+
+	/**
+	 * Klass Word的长度，单位bit
+	 */
+	public static final int KLASS_WORD_LENGTH;
+
+	/**
+	 * Klass Word的偏移量，单位byte
+	 */
+	public static final int KLASS_WORD_BYTE_OFFSET;
+
+	/**
+	 * Klass Word的长度，单位byte
+	 */
+	public static final int KLASS_WORD_BYTE_LENGTH;
+
+	static {
+		if (Vm.NATIVE_JVM_BIT_VERSION == 32) {
+			KLASS_WORD_OFFSET = KLASS_OFFSET_32;
+			KLASS_WORD_LENGTH = KLASS_LENGTH_32;
+		} else if (Vm.NATIVE_JVM_BIT_VERSION == 64) {
+			if (Vm.NATIVE_JVM_COMPRESSED_OOPS) {
+				KLASS_WORD_OFFSET = KLASS_OFFSET_64C;
+				KLASS_WORD_LENGTH = KLASS_LENGTH_64C;
+			} else {
+				KLASS_WORD_OFFSET = KLASS_OFFSET_64;
+				KLASS_WORD_LENGTH = KLASS_LENGTH_64;
+			}
+		} else {
+			KLASS_WORD_OFFSET = -1;
+			KLASS_WORD_LENGTH = -1;
+		}
+		KLASS_WORD_BYTE_OFFSET = KLASS_WORD_OFFSET / 8;
+		KLASS_WORD_BYTE_LENGTH = KLASS_WORD_LENGTH / 8;
+	}
+
+	/**
+	 * 获取对象头
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	public static final long getKlassWord(Object obj) {
+		if (KLASS_WORD_LENGTH == 32)
+			return InternalUnsafe.unsafe.getInt(obj, KLASS_WORD_BYTE_OFFSET);
+		else if (KLASS_WORD_LENGTH == 64)
+			return InternalUnsafe.unsafe.getLong(obj, KLASS_WORD_BYTE_OFFSET);
+		else
+			return -1;
+	}
+
+	/**
+	 * 强制改写对象头
+	 * 
+	 * @param obj
+	 * @param klassWord
+	 * @return
+	 */
+	public static final boolean setKlassWord(Object obj, long klassWord) {
+		if (KLASS_WORD_LENGTH == 32) {
+			InternalUnsafe.unsafe.putInt(obj, KLASS_WORD_BYTE_OFFSET, (int) klassWord);
+			return true;
+		} else if (KLASS_WORD_LENGTH == 64) {
+			InternalUnsafe.unsafe.putLong(obj, KLASS_WORD_BYTE_OFFSET, klassWord);
+			return true;
+		}
+		return false;
+	}
 }

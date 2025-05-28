@@ -113,7 +113,7 @@ public class InternalUnsafe {
 	}
 
 	/**
-	 * 没有任何安全检查的Unsafe.objectFieldOffset方法，可以修改record class的成员
+	 * 没有任何安全检查的Unsafe.objectFieldOffset方法，可以获取record的成员offset
 	 * 
 	 * @param field
 	 * @return
@@ -219,6 +219,21 @@ public class InternalUnsafe {
 		putLong(obj, Reflection.getField(obj, field), value);
 	}
 
+	public static Object getLong(Object obj, Field field) {
+		if (Modifier.isStatic(field.getModifiers()))
+			return unsafe.getLong(staticFieldBase(field), staticFieldOffset(field));
+		else
+			return unsafe.getLong(obj, objectFieldOffset(field));
+	}
+
+	public static Object getLong(Object obj, String field) {
+		Field f = Reflection.getField(obj, field);
+		if (Modifier.isStatic(f.getModifiers()))
+			return unsafe.getLong(staticFieldBase(f), staticFieldOffset(f));
+		else
+			return unsafe.getLong(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
 	public static void puttBoolean(Object obj, Field field, boolean value) {
 		if (Modifier.isStatic(field.getModifiers()))
 			unsafe.putBoolean(staticFieldBase(field), staticFieldOffset(field), value);
@@ -239,6 +254,21 @@ public class InternalUnsafe {
 
 	public static void putInt(Object obj, String field, int value) {
 		putInt(obj, Reflection.getField(obj, field), value);
+	}
+
+	public static Object getInt(Object obj, Field field) {
+		if (Modifier.isStatic(field.getModifiers()))
+			return unsafe.getInt(staticFieldBase(field), staticFieldOffset(field));
+		else
+			return unsafe.getInt(obj, objectFieldOffset(field));
+	}
+
+	public static Object getInt(Object obj, String field) {
+		Field f = Reflection.getField(obj, field);
+		if (Modifier.isStatic(f.getModifiers()))
+			return unsafe.getInt(staticFieldBase(f), staticFieldOffset(f));
+		else
+			return unsafe.getInt(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
 	public static void putDouble(Object obj, Field field, double value) {
