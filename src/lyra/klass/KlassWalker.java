@@ -21,6 +21,18 @@ public class KlassWalker {
 		public void operate(Field f, boolean isStatic, Object value);
 	}
 
+	@FunctionalInterface
+	public static interface SimpleFieldOperation {
+		/**
+		 * 遍历每个字段
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public void operate(String field_name, Class<?> field_type, boolean isStatic, Object value);
+	}
+
 	/**
 	 * 字段如果是静态的，则op()中形参value为字段值；如果是非静态字段则传入null
 	 * 
@@ -33,6 +45,12 @@ public class KlassWalker {
 			boolean isStatic = Modifier.isStatic(f.getModifiers());
 			op.operate(f, isStatic, isStatic ? ObjectManipulator.access(cls, f) : null);
 		}
+	}
+
+	public static void walkFields(Class<?> cls, SimpleFieldOperation op) {
+		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
+			op.operate(f.getName(), f.getType(), isStatic, value);
+		});
 	}
 
 	/**
@@ -48,6 +66,12 @@ public class KlassWalker {
 		}
 	}
 
+	public static void walkFields(Object obj, SimpleFieldOperation op) {
+		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
+			op.operate(f.getName(), f.getType(), isStatic, value);
+		});
+	}
+
 	@FunctionalInterface
 	public static interface FieldAnnotationOperation<T extends Annotation> {
 		/**
@@ -58,6 +82,18 @@ public class KlassWalker {
 		 * @param value    字段值，无效则为null
 		 */
 		public void operate(Field f, boolean isStatic, Object value, T annotation);
+	}
+
+	@FunctionalInterface
+	public static interface SimpleFieldAnnotationOperation<T extends Annotation> {
+		/**
+		 * 遍历每个具有某注解的字段
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public void operate(String field_name, Class<?> field_type, boolean isStatic, Object value, T annotation);
 	}
 
 	/**
@@ -75,11 +111,23 @@ public class KlassWalker {
 		});
 	}
 
+	public static <T extends Annotation> void walkFields(Class<?> cls, Class<T> annotationCls, SimpleFieldAnnotationOperation<T> op) {
+		walkFields(cls, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
+			op.operate(f.getName(), f.getType(), isStatic, value, annotation);
+		});
+	}
+
 	public static <T extends Annotation> void walkFields(Object obj, Class<T> annotationCls, FieldAnnotationOperation<T> op) {
 		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
 			T annotation = f.getAnnotation(annotationCls);
 			if (annotation != null)
 				op.operate(f, isStatic, value, annotation);
+		});
+	}
+
+	public static <T extends Annotation> void walkFields(Object obj, Class<T> annotationCls, SimpleFieldAnnotationOperation<T> op) {
+		walkFields(obj, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
+			op.operate(f.getName(), f.getType(), isStatic, value, annotation);
 		});
 	}
 }

@@ -288,8 +288,8 @@ public class KlassLoader {
 		return JavaLang.getOuterCallerClass().getClassLoader();
 	}
 
-	public static ClassLoader getStackClassClassLoader(int skip) {
-		return JavaLang.trackStackFrameClass(skip + 1).getClassLoader();
+	public static ClassLoader getOuterCallerClassLoader() {
+		return JavaLang.trackStackFrameClass(4).getClassLoader();
 	}
 
 	/**
@@ -310,7 +310,7 @@ public class KlassLoader {
 	}
 
 	public static void loadKlass(boolean init, String... class_names) {
-		ClassLoader loader = getCallerClassLoader();
+		ClassLoader loader = getOuterCallerClassLoader();
 		loadKlass(loader, init, class_names);
 	}
 
@@ -320,7 +320,7 @@ public class KlassLoader {
 	 * @param class_names
 	 */
 	public static void loadKlass(String... class_names) {
-		ClassLoader loader = getCallerClassLoader();
+		ClassLoader loader = getOuterCallerClassLoader();
 		loadKlass(loader, true, class_names);
 	}
 
