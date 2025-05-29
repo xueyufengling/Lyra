@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 import lyra.lang.Handles;
 import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
-import lyra.ntv.Klass;
+import lyra.ntv.Oops;
 
 /**
  * 核心的类成员修改、访问和方法调用类，支持修改final、record成员变量。<br>
@@ -286,10 +286,10 @@ public abstract class ObjectManipulator {
 	}
 
 	public static final Object cast(Object obj, Class<?> castType) {
-		return cast(obj, Klass.klassWord(castType));
+		return cast(obj, Oops.klassWord(castType));
 	}
 
 	public static final Object cast(Object obj, String castType) {
-		return cast(obj, Klass.klassWord(castType));
+		return cast(obj, Oops.klassWord(castType));
 	}
 }

@@ -1,6 +1,6 @@
 package lyra.ntv;
 
-public class Klass {
+public class Oops {
 	static {
 		LibLyra.loadLibrary();
 	}

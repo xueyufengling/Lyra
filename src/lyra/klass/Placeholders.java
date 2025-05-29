@@ -1,6 +1,6 @@
 package lyra.klass;
 
-public final class Placeholder {
+public final class Placeholders {
 
 	@SuppressWarnings("unchecked")
 	public static final <T> T Undefined(long castTypeKlassWord) {
@@ -27,5 +27,16 @@ public final class Placeholder {
 	@SuppressWarnings("unchecked")
 	public static final <T> T Undefined(Object obj, String castType) {
 		return (T) ObjectManipulator.cast(new Object(), castType);
+	}
+
+	/**
+	 * 防止Object类型的static final变量初始null字面值被内联<br>
+	 * 当跨类修改目标类字段，且static final Object被初始化为null字面值时：如果不在修改之前在本类使用这个变量，那么这个值的修改就不会成功（会被内联）。
+	 * 
+	 * @param var
+	 * @return
+	 */
+	public static final void NotInlined(Object var) {
+
 	}
 }
