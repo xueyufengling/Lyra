@@ -4,6 +4,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import lyra.lang.Reflection;
+
 /**
  * 遍历类的工具，无视访问修饰符和反射过滤<br>
  * 提供原始Field、Method、Constructor等，对其进行修改会导致反射获取到的所有副本都被修改
@@ -40,7 +42,7 @@ public class KlassWalker {
 	 * @param op
 	 */
 	public static void walkFields(Class<?> cls, FieldOperation op) {
-		Field[] fields = ObjectManipulator.getDeclaredFields(cls);
+		Field[] fields = Reflection.getDeclaredFields(cls);
 		for (Field f : fields) {
 			boolean isStatic = Modifier.isStatic(f.getModifiers());
 			op.operate(f, isStatic, isStatic ? ObjectManipulator.access(cls, f) : null);
@@ -60,7 +62,7 @@ public class KlassWalker {
 	 * @param op
 	 */
 	public static void walkFields(Object obj, FieldOperation op) {
-		Field[] fields = ObjectManipulator.getDeclaredFields(obj.getClass());
+		Field[] fields = Reflection.getDeclaredFields(obj.getClass());
 		for (Field f : fields) {
 			op.operate(f, Modifier.isStatic(f.getModifiers()), ObjectManipulator.access(obj, f));
 		}

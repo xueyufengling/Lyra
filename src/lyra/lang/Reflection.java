@@ -1,8 +1,10 @@
 package lyra.lang;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
@@ -10,19 +12,156 @@ import java.util.ArrayList;
  * 反射工具，大部分功能可以直接使用Manipulator调用
  */
 public abstract class Reflection {
+	private static MethodHandle Class_getDeclaredFields0;// Class.getDeclaredFields0无视反射访问权限获取字段
+	private static MethodHandle Class_getDeclaredMethods0;
+	private static MethodHandle Class_getDeclaredConstructors0;
+	private static MethodHandle Class_searchFields;
+	private static MethodHandle Class_searchMethods;
+	private static MethodHandle Class_getConstructor0;
+	private static MethodHandle Class_forName0;
 
-	public static Class<?> getClassForName(String name, boolean printClassNotFoundException) {
+	static {
 		try {
-			return Class.forName(name);
-		} catch (ClassNotFoundException ex) {
-			if (printClassNotFoundException)
-				ex.printStackTrace();
+			Class_getDeclaredFields0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredFields0", Field[].class, boolean.class);
+			Class_getDeclaredMethods0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredMethods0", Method[].class, boolean.class);
+			Class_getDeclaredConstructors0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredConstructors0", Constructor[].class, boolean.class);
+			Class_searchFields = Handles.findStaticMethodHandle(Class.class, "searchFields", Field.class, Field[].class, String.class);
+			Class_searchMethods = Handles.findStaticMethodHandle(Class.class, "searchMethods", Method.class, Method[].class, String.class, Class[].class);
+			Class_getConstructor0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getConstructor0", Constructor.class, Class[].class, int.class);
+			Class_forName0 = Handles.findStaticMethodHandle(Class.class, "forName0", Class.class, String.class, boolean.class, ClassLoader.class, Class.class);
+		} catch (SecurityException | IllegalArgumentException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static Field setAccessible(Class<?> cls, String field_name, boolean accessible) {
+		Field f = Reflection.getField(cls, field_name);
+		InternalUnsafe.setAccessible(f, accessible);
+		return f;
+	}
+
+	/**
+	 * 获取对象定义的字段原对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部字段。<br>
+	 * 注意：本方法没有拷贝对象，因此对返回字段的任何修改都将反应在反射系统获取的所有的复制对象中
+	 * 
+	 * @param clazz 要获取的类
+	 * @return 字段列表
+	 */
+	public static Field[] getDeclaredFields(Class<?> clazz, boolean publicOnly) {
+		try {
+			return (Field[]) Class_getDeclaredFields0.invokeExact(clazz, publicOnly);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return null;
 	}
 
-	public static Class<?> getClassForName(String name) {
-		return getClassForName(name, true);
+	public static Field[] getDeclaredFields(Class<?> clazz) {
+		return getDeclaredFields(clazz, false);
+	}
+
+	public static Field getDeclaredField(Class<?> clazz, String field_name) {
+		try {
+			return (Field) Class_searchFields.invokeExact(getDeclaredFields(clazz), field_name);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * 获取对象定义的方法原对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部方法
+	 * 
+	 * @param clazz 要获取的类
+	 * @return 字段列表
+	 */
+	public static Method[] getDeclaredMethods(Class<?> clazz, boolean publicOnly) {
+		try {
+			return (Method[]) Class_getDeclaredMethods0.invokeExact(clazz, false);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static Method[] getDeclaredMethods(Class<?> clazz) {
+		return getDeclaredMethods(clazz, false);
+	}
+
+	public static Method getDeclaredMethod(Class<?> clazz, String method_name, Class<?>... arg_types) {
+		try {
+			return (Method) Class_searchMethods.invokeExact(getDeclaredMethods(clazz), method_name, arg_types);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static <T> Constructor<T>[] getDeclaredConstructors(Class<?> clazz, boolean publicOnly) {
+		try {
+			return (Constructor<T>[]) Class_getDeclaredConstructors0.invokeExact(clazz, publicOnly);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * 获取构造函数
+	 * 
+	 * @param <T>
+	 * @param clazz
+	 * @param which    java.lang.reflect.Member接口中的访问类型，Member.DECLARED为全部定义的构造函数，Member.PUBLIC为public的构造函数
+	 * @param argTypes 构造函数的参数类型
+	 * @return
+	 */
+	public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, int which, Class<?>... argTypes) {
+		try {
+			return (Constructor<T>) Class_getConstructor0.invokeExact(clazz, argTypes, which);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static <T> Constructor<T> getDeclaredConstructor(Class<T> clazz, Class<?>... argTypes) {
+		return getDeclaredConstructor(clazz, Member.DECLARED, argTypes);
+	}
+
+	/**
+	 * 查找类
+	 * 
+	 * @param name
+	 * @param initialize
+	 * @param loader
+	 * @param caller
+	 * @return
+	 */
+	public static Class<?> forName(String name, boolean initialize, ClassLoader loader, Class<?> caller) {
+		try {
+			return (Class<?>) Class_forName0.invokeExact(name, initialize, loader, caller);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static Class<?> forName(String name, boolean initialize) {
+		Class<?> caller = JavaLang.getOuterCallerClass();
+		return forName(name, initialize, caller.getClassLoader(), caller);
+	}
+
+	public static Class<?> forName(String name) {
+		Class<?> caller = JavaLang.getOuterCallerClass();
+		return forName(name, true, caller.getClassLoader(), caller);
+	}
+
+	public static Class<?> forNameSys(String name, boolean initialize) {
+		return forName(name, initialize, null, Class.class);
+	}
+
+	public static Class<?> forNameSys(String name) {
+		return forNameSys(name, true);
 	}
 
 	public static String getClassNameWithoutPackage(String full_name) {
@@ -46,27 +185,26 @@ public abstract class Reflection {
 			cls = c;
 		else
 			cls = obj.getClass();
-		try {
-			return cls.getDeclaredField(name);
-		} catch (NoSuchFieldException ex) {
+		Field result = getDeclaredField(cls, name);
+		if (result == null) {
 			Class<?> supercls = cls.getSuperclass();
 			if (supercls == null) {
 				System.err.println("Cannot find field " + name);
-				ex.printStackTrace();
 				return null;
 			} else
 				return getField(supercls, name);
 		}
+		return result;
 	}
 
 	public static Object getValue(Object obj, Field field) {
 		if (obj == null || field == null)
 			return null;
 		try {
-			field.setAccessible(true);
+			InternalUnsafe.setAccessible(field, true);
 			return field.get(obj);
 		} catch (IllegalAccessException ex) {
-			System.err.println("Reflection Utils reached IllegalAccessException reading field " + field);
+			System.err.println("Reflection throws IllegalAccessException reading field " + field);
 			ex.printStackTrace();
 		}
 		return null;
@@ -80,10 +218,10 @@ public abstract class Reflection {
 		if (obj == null || field == null)
 			return false;
 		try {
-			field.setAccessible(true);
+			InternalUnsafe.setAccessible(field, true);
 			field.set(obj, value);
 		} catch (IllegalAccessException ex) {
-			System.err.println("Reflection Utils reached IllegalAccessException writing field " + field + " with value " + value + " in object " + obj.toString());
+			System.err.println("Reflection throws IllegalAccessException writing field " + field + " with value " + value + " in object " + obj.toString());
 			ex.printStackTrace();
 			;
 			return false;
@@ -109,23 +247,17 @@ public abstract class Reflection {
 
 	// 只搜寻该类自己的方法
 	public static Method getMethodSelf(Class<?> clazz, String name, Class<?>... arg_types) {
-		try {
-			return clazz.getDeclaredMethod(name, arg_types == null ? (new Class<?>[] {}) : arg_types);
-		} catch (NoSuchMethodException ex) {
-			return null;
-		}
+		return getDeclaredMethod(clazz, name, arg_types == null ? (new Class<?>[] {}) : arg_types);
 	}
 
 	// 只搜寻该类及其父类、实现接口的方法
 	public static Method getMethodDirectInherited(Class<?> clazz, String name, Class<?>... arg_types) {
-		try {
-			return clazz.getDeclaredMethod(name, arg_types == null ? (new Class<?>[] {}) : arg_types);
-		} catch (NoSuchMethodException ex) {
+		Method result = getDeclaredMethod(clazz, name, arg_types == null ? (new Class<?>[] {}) : arg_types);
+		if (result == null) {
 			Class<?> supercls = clazz.getSuperclass();
 			Class<?>[] interfaces = clazz.getInterfaces();
 			if (supercls == null && interfaces.length == 0) {
 				System.err.println("Cannot find method " + name + " in neither super class nor implemented interfaces");
-				ex.printStackTrace();
 				return null;
 			} else {
 				Method method = getMethodSelf(supercls, name, arg_types);
@@ -138,6 +270,7 @@ public abstract class Reflection {
 				return method;
 			}
 		}
+		return result;
 	}
 
 	public static Method getMethod(Object obj, String name, Class<?>... arg_types) {
@@ -225,10 +358,10 @@ public abstract class Reflection {
 	public static Object invoke(Object obj, String method_name, Class<?>[] arg_types, Object... args) {
 		Method method = getMethod(obj, method_name, arg_types);
 		try {
-			method.setAccessible(true);
+			InternalUnsafe.setAccessible(method, true);
 			return method.invoke(obj, args);
 		} catch (IllegalAccessException | InvocationTargetException ex) {
-			System.err.println("Reflection Utils reached exception invoking method " + method_name + " with arguments " + args + " in object " + obj.toString());
+			System.err.println("Reflection throws exception invoking method " + method_name + " with arguments " + args + " in object " + obj.toString());
 			ex.printStackTrace();
 			return null;
 		}
@@ -240,12 +373,12 @@ public abstract class Reflection {
 			cls = c;
 		else
 			cls = obj.getClass();
-		try {
-			return cls.getDeclaredConstructor(arg_types == null ? (new Class<?>[] {}) : arg_types);
-		} catch (NoSuchMethodException ex) {
+		Constructor<?> result = getDeclaredConstructor(cls, arg_types == null ? (new Class<?>[] {}) : arg_types);
+		if (result == null) {
 			Class<?> supercls = cls.getSuperclass();
 			return supercls == null ? null : getConstructor(supercls, arg_types);
 		}
+		return result;
 	}
 
 	/**
@@ -258,10 +391,10 @@ public abstract class Reflection {
 	public static Object construct(Object obj, Class<?>[] arg_types, Object... args) {
 		Constructor<?> constructor = getConstructor(obj, arg_types);
 		try {
-			constructor.setAccessible(true);
+			InternalUnsafe.setAccessible(constructor, true);
 			return constructor.newInstance(args);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-			System.err.println("Reflection Utils reached exception contructing " + obj.toString() + " with arguments " + args);
+			System.err.println("Reflection throws exception contructing " + obj.toString() + " with arguments " + args);
 			ex.printStackTrace();
 			return null;
 		}

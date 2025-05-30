@@ -48,11 +48,6 @@ public abstract class Vm {
 
 	private static final Class<?> ClassLoaders = null;
 
-	private static final boolean has_sa_jdi_jar = false;
-	public static final Class<?> VMClass = null;// sun.jvm.hotspot.runtime.VM
-	@SuppressWarnings("unused")
-	private static final Object VM = null;
-
 	static {
 		String bit_version = System.getProperty("sun.arch.data.model");
 		if (bit_version != null && bit_version.contains("64"))
@@ -104,11 +99,6 @@ public abstract class Vm {
 			Flag_setBooleanValue = Handles.findStaticMethodHandle(Flag, "setBooleanValue", void.class, String.class, boolean.class);
 			Flag_setStringValue = Handles.findStaticMethodHandle(Flag, "setStringValue", void.class, String.class, String.class);
 			Flag_getValue = Handles.findSpecialMethodHandle(Flag, Flag, "getValue", Object.class);
-			// 获取虚拟机实体VM
-			if (has_sa_jdi_jar) {
-				ObjectManipulator.setObject(Vm.class, "VMClass", Class.forName("sun.jvm.hotspot.runtime.VM"));
-				ObjectManipulator.setObject(Vm.class, "VM", ObjectManipulator.invoke(VMClass, "getVM", null));
-			}
 		} catch (ClassNotFoundException ex) {
 			ex.printStackTrace();
 		}

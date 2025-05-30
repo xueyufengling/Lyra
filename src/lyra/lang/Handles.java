@@ -5,9 +5,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
 
 /**
- * 句柄操作相关，包括调用native方法
+ * 句柄操作相关，包括调用native方法<br>
+ * 
+ * @implNote 该类未引用任何本库的类，需要最先初始化
  */
 public class Handles {
 	private static final Lookup trusted_lookup;
@@ -15,16 +18,13 @@ public class Handles {
 	static {
 		Lookup IMPL_LOOKUP = null;
 		try {
-			IMPL_LOOKUP = (Lookup) (InternalUnsafe.setAccessible(Lookup.class, "IMPL_LOOKUP", true).get(null));
-		} catch (IllegalArgumentException | IllegalAccessException e) {
+			Field IMPL_LOOKUP_Field = Lookup.class.getDeclaredField("IMPL_LOOKUP");// 获取拥有所有权限的受信任的Lookup的唯一方法
+			IMPL_LOOKUP = (Lookup) (InternalUnsafe.setAccessible(IMPL_LOOKUP_Field, true).get(null));
+		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
 			e.printStackTrace();
-		} // 获取拥有所有权限的受信任的Lookup的唯一方法
+		}
 		trusted_lookup = IMPL_LOOKUP;
 	}
-
-	/**
-	 * 句柄工具
-	 */
 
 	/**
 	 * 查找任意字节码行为的方法句柄(包括native)，从search_chain_start_subclazz开始查找，如果该类不存在方法则一直向上查找方法，直到在指定的超类search_chain_end_superclazz中也找不到方法时终止并抛出错误

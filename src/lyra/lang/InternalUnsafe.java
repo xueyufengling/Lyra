@@ -6,9 +6,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
-
-import lyra.klass.ObjectManipulator;
 import sun.misc.Unsafe;
+
+//本类未使用任何库中的类，ObjectManipulator为其静态内部类使用
+import lyra.klass.ObjectManipulator;
 
 public class InternalUnsafe {
 	public static Unsafe unsafe;
@@ -104,12 +105,6 @@ public class InternalUnsafe {
 	public static <AO extends AccessibleObject> AO setAccessible(AO accessibleObj, boolean accessible) {
 		unsafe.putBoolean(accessibleObj, java_lang_reflect_AccessibleObject_override_offset, accessible);
 		return accessibleObj;
-	}
-
-	public static Field setAccessible(Class<?> cls, String field_name, boolean accessible) {
-		Field f = Reflection.getField(cls, field_name);
-		setAccessible(f, accessible);
-		return f;
 	}
 
 	/**

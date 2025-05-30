@@ -1,12 +1,10 @@
 package lyra.klass;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import lyra.lang.Handles;
 import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
 import lyra.ntv.Oops;
@@ -16,76 +14,6 @@ import lyra.ntv.Oops;
  * 该类的方法破坏了Java的安全性，请谨慎使用。
  */
 public abstract class ObjectManipulator {
-
-	private static MethodHandle getDeclaredFields0;// Class.getDeclaredFields0无视反射访问权限获取字段
-	private static MethodHandle getDeclaredMethods0;
-	private static MethodHandle searchFields;
-	private static MethodHandle searchMethods;
-
-	static {
-		try {
-			getDeclaredFields0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredFields0", Field[].class, boolean.class);
-			getDeclaredMethods0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredMethods0", Method[].class, boolean.class);
-			searchFields = Handles.findStaticMethodHandle(Class.class, "searchFields", Field.class, Field[].class, String.class);
-			searchMethods = Handles.findStaticMethodHandle(Class.class, "searchMethods", Method.class, Method[].class, String.class, Class[].class);
-		} catch (SecurityException | IllegalArgumentException ex) {
-			ex.printStackTrace();
-		}
-	}
-
-	/**
-	 * 获取对象定义的字段原对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部字段。<br>
-	 * 注意：本方法没有拷贝对象，因此对返回字段的任何修改都将反应在反射系统获取的所有的复制对象中
-	 * 
-	 * @param clazz 要获取的类
-	 * @return 字段列表
-	 */
-	public static Field[] getDeclaredFields(Class<?> clazz) {
-		try {
-			return (Field[]) getDeclaredFields0.invokeExact(clazz, false);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		return null;
-	}
-
-	public static Field getDeclaredField(Class<?> clazz, String field_name) {
-		try {
-			return (Field) searchFields.invokeExact(getDeclaredFields(clazz), field_name);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		return null;
-	}
-
-	/**
-	 * 获取对象定义的方法原对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部方法
-	 * 
-	 * @param clazz 要获取的类
-	 * @return 字段列表
-	 */
-	public static Method[] getDeclaredMethods(Class<?> clazz) {
-		try {
-			return (Method[]) getDeclaredMethods0.invokeExact(clazz, false);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		return null;
-	}
-
-	public static Method getDeclaredMethod(Class<?> clazz, String method_name, Class<?> arg_types) {
-		try {
-			return (Method) searchMethods.invokeExact(getDeclaredMethods(clazz), method_name, arg_types);
-		} catch (Throwable ex) {
-			ex.printStackTrace();
-		}
-		return null;
-	}
-
-	/**
-	 * 反射工具
-	 */
-
 	/**
 	 * 本类最核心的方法，移除AccessibleObject的访问安全检查限制，使得对象可以被访问。<br>
 	 * 注意：如果access_obj为null，JVM将直接崩溃。
