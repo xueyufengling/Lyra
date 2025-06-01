@@ -413,4 +413,15 @@ public abstract class Reflection {
 			return true;
 		return supercls == null ? false : hasSuperClass(supercls, super_class);
 	}
+
+	/**
+	 * f所声明的类型是否是type或者其子类
+	 * 
+	 * @param f
+	 * @param type
+	 * @return
+	 */
+	public static boolean is(Field f, Class<?> type) {
+		return type.isAssignableFrom(f.getType());
+	}
 }

@@ -30,7 +30,7 @@ public class KlassLoader {
 
 	public static class Proxy extends ClassLoader {
 		private ClassLoader son;
-		ByteCodeSource bytecodeSource;
+		private ByteCodeSource bytecodeSource;
 		private boolean reverseLoading = false;// 记录是否已经开始向下查找，防止在整个加载链中都查找不到无限循环loadClass()
 
 		public Proxy(ClassLoader dest, String dest_parent_field_name, ByteCodeSource source) {
@@ -81,6 +81,10 @@ public class KlassLoader {
 				e.printStackTrace();
 			}
 			return null;
+		}
+
+		public final ByteCodeSource byteCodeSource() {
+			return bytecodeSource;
 		}
 
 		/**

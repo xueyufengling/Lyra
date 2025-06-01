@@ -13,7 +13,7 @@ public interface ByteCodeSource {
 	public byte[] genByteCode(String class_name);
 
 	public static class Map implements ByteCodeSource {
-		private HashMap<String, byte[]> klassDefs;
+		public final HashMap<String, byte[]> klassDefs;
 
 		public Map(HashMap<String, byte[]> klassDefs) {
 			this.klassDefs = klassDefs;
@@ -27,5 +27,9 @@ public interface ByteCodeSource {
 		public static Map from(HashMap<String, byte[]> klassDefs) {
 			return new Map(klassDefs);
 		}
+	}
+
+	public static Map asMap(ByteCodeSource source) {
+		return (Map) source;
 	}
 }
