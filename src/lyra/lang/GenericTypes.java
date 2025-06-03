@@ -12,14 +12,46 @@ public class GenericTypes {
 	 * @param types
 	 * @return
 	 */
-	public static boolean is(Field f, Class<?>... types) {
-		Type[] actualTypeArguments = ((ParameterizedType) f.getGenericType()).getActualTypeArguments();
-		if (actualTypeArguments.length != types.length)
+	public static boolean is(Field f, int[] indices, Class<?>... types) {
+		Class<?>[] classes = classes(f, indices);
+		if (classes.length != types.length)
 			return false;
-		for (int idx = 0; idx < types.length; ++idx)
-			if (!actualTypeArguments[idx].getTypeName().equals(types[idx].getTypeName()))
+		for (int idx = 0; idx < types.length; ++idx) {
+			if (!classes[idx].getTypeName().equals(types[idx].getTypeName()))
 				return false;
+		}
 		return true;
+	}
+
+	/**
+	 * 返回第一层的泛型参数是否匹配给定类列表
+	 * 
+	 * @param f
+	 * @param types
+	 * @return
+	 */
+	public static boolean is(Field f, Class<?>... types) {
+		return is(f, new int[] {}, types);
+	}
+
+	/**
+	 * 匹配前N个泛型参数是否和types一致
+	 * 
+	 * @param f
+	 * @param types
+	 * @return
+	 */
+	public static boolean startWith(Field f, int[] indices, Class<?>... types) {
+		Class<?>[] classes = classes(f, indices);
+		for (int idx = 0; idx < types.length; ++idx) {
+			if (!classes[idx].getTypeName().equals(types[idx].getTypeName()))
+				return false;
+		}
+		return true;
+	}
+
+	public static boolean startWith(Field f, Class<?>... types) {
+		return startWith(f, new int[] {}, types);
 	}
 
 	/**
