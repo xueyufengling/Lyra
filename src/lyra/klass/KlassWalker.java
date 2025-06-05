@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import lyra.lang.Reflection;
+import lyra.object.ObjectManipulator;
 
 /**
  * 遍历类的工具，无视访问修饰符和反射过滤<br>

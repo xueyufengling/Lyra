@@ -1,78 +1,89 @@
 package lyra.lang;
 
-import java.lang.reflect.AccessibleObject;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
-import sun.misc.Unsafe;
 
-//本类未使用任何库中的类，ObjectManipulator为其静态内部类使用
-import lyra.klass.ObjectManipulator;
+import lyra.lang.base.HandleBase;
+import lyra.lang.base.ReflectionBase;
+import lyra.object.ObjectManipulator;
 
 public class InternalUnsafe {
-	public static Unsafe unsafe;
-	static Class<?> internalUnsafeClass;
+	private static Class<?> internalUnsafeClass;
 	static Object internalUnsafe;
 
 	private static Method objectFieldOffset$Field;// 没有检查的jdk.internal.misc.Unsafe.objectFieldOffset()
 	private static Method objectFieldOffset$Class$String;
 	private static Method staticFieldBase;
 	private static Method staticFieldOffset;
-	private static Method defineClass;
 
-	/*
-	 * 64位JVM的offset从12开始为数据段，此处为java.lang.reflect.AccessibleObject的boolean override成员，将该成员覆写为true可以无视权限调用Method、Field、Constructor
-	 */
-	private static final long java_lang_reflect_AccessibleObject_override_offset;
+	private static Method defineClass;
+	private static Method allocateInstance;
+
+	private static Method putReference;
+	private static Method getReference;
+
+	private static Method putLong;
+	private static Method getLong;
+
+	private static Method putBoolean;
+	private static Method getBoolean;
+
+	private static Method putInt;
+	private static Method getInt;
+
+	private static Method putDouble;
+	private static Method getDouble;
+
+	private static Method putFloat;
+	private static Method getFloat;
 
 	public static final long INVALID_FIELD_OFFSET = -1;
 
+	private static final long UNREACHABLE_lONG = -1;
+	private static final Object UNREACHABLE_REFERENCE = null;
+	private static final boolean UNREACHABLE_BOOLEAN = false;
+	private static final int UNREACHABLE_INT = -1;
+	private static final double UNREACHABLE_DOUBLE = -1;
+	private static final float UNREACHABLE_FLOAT = -1;
+
 	static {
-		Field theUnsafe;
-		Field theInternalUnsafe;
+		VarHandle theInternalUnsafe;
 		try {
-			theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-			theUnsafe.setAccessible(true);
-			unsafe = (Unsafe) theUnsafe.get(null);
 			internalUnsafeClass = Class.forName("jdk.internal.misc.Unsafe");
-			theInternalUnsafe = Unsafe.class.getDeclaredField("theInternalUnsafe");
-			theInternalUnsafe.setAccessible(true);
-			internalUnsafe = theInternalUnsafe.get(null);
-		} catch (NoSuchFieldException | ClassNotFoundException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+			theInternalUnsafe = HandleBase.internalFindStaticVarHandle(internalUnsafeClass, "theUnsafe", internalUnsafeClass);
+			internalUnsafe = theInternalUnsafe.get();
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		// 最优先获取java.lang.reflect.AccessibleObject的override以获取访问权限
-		java_lang_reflect_AccessibleObject_override_offset = java_lang_reflect_AccessibleObject_override_offset();
+		if (internalUnsafe == null)
+			System.err.println("Get jdk.internal.misc.Unsafe instance failed! Lyra library will be broken.");
 		try {
-			objectFieldOffset$Field = setAccessible(internalUnsafeClass.getDeclaredMethod("objectFieldOffset", Field.class), true);
-			objectFieldOffset$Class$String = setAccessible(internalUnsafeClass.getDeclaredMethod("objectFieldOffset", Class.class, String.class), true);
-			staticFieldBase = setAccessible(internalUnsafeClass.getDeclaredMethod("staticFieldBase", Field.class), true);
-			staticFieldOffset = setAccessible(internalUnsafeClass.getDeclaredMethod("staticFieldOffset", Field.class), true);
-			defineClass = setAccessible(internalUnsafeClass.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class), true);
-		} catch (NoSuchMethodException | SecurityException e) {
-			e.printStackTrace();
+			objectFieldOffset$Field = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("objectFieldOffset", Field.class), true);
+			objectFieldOffset$Class$String = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("objectFieldOffset", Class.class, String.class), true);
+			staticFieldBase = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("staticFieldBase", Field.class), true);
+			staticFieldOffset = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("staticFieldOffset", Field.class), true);
+			defineClass = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class), true);
+			allocateInstance = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("allocateInstance", Class.class), true);
+			putReference = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putReference", Object.class, long.class, Object.class), true);
+			getReference = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getReference", Object.class, long.class), true);
+			putLong = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putLong", Object.class, long.class, long.class), true);
+			getLong = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getLong", Object.class, long.class), true);
+			putBoolean = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putBoolean", Object.class, long.class, boolean.class), true);
+			getBoolean = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getBoolean", Object.class, long.class), true);
+			putInt = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putInt", Object.class, long.class, int.class), true);
+			getInt = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getInt", Object.class, long.class), true);
+			putDouble = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putDouble", Object.class, long.class, double.class), true);
+			getDouble = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getDouble", Object.class, long.class), true);
+			putFloat = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putFloat", Object.class, long.class, float.class), true);
+			getFloat = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getFloat", Object.class, long.class), true);
+		} catch (NoSuchMethodException | SecurityException ex) {
+			ex.printStackTrace();
 		}
 
-	}
-
-	/**
-	 * 获取{@code java.lang.reflect.AccessibleObject.override}成员内存位移<br>
-	 * {@code sun.misc.Unsafe.objectFieldOffset()}已经标注{@code @Deprecated}，如果该方法还存在则调用该方法获取{@code override}位移。<br>
-	 * 若不存在则直接返回根据内存模型决定的位移（magic number）<br>
-	 * 
-	 * @return
-	 */
-	private static final long java_lang_reflect_AccessibleObject_override_offset() {
-		Method unsafe_objectFieldOffset = null;
-		try {
-			unsafe_objectFieldOffset = Unsafe.class.getDeclaredMethod("objectFieldOffset", Field.class);
-			if (unsafe_objectFieldOffset != null)
-				return (long) unsafe_objectFieldOffset.invoke(unsafe, BlankMirror_java_lang_reflect_AccessibleObject.class.getDeclaredField("override"));
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | InvocationTargetException | NoSuchFieldException e) {
-		}
-		return 12;
 	}
 
 	public static final class Invoker {
@@ -87,24 +98,11 @@ public class InternalUnsafe {
 		public static final Object invoke(String method_name, Class<?>[] arg_types, Object... args) {
 			try {
 				return ObjectManipulator.invoke(InternalUnsafe.internalUnsafe, method_name, arg_types, args);
-			} catch (SecurityException e) {
-				e.printStackTrace();
+			} catch (SecurityException ex) {
+				ex.printStackTrace();
 			}
 			return null;
 		}
-	}
-
-	/**
-	 * 无视权限设置是否可访问
-	 * 
-	 * @param <AO>
-	 * @param accessibleObj
-	 * @param accessible
-	 * @return
-	 */
-	public static <AO extends AccessibleObject> AO setAccessible(AO accessibleObj, boolean accessible) {
-		unsafe.putBoolean(accessibleObj, java_lang_reflect_AccessibleObject_override_offset, accessible);
-		return accessibleObj;
 	}
 
 	/**
@@ -158,11 +156,120 @@ public class InternalUnsafe {
 	@SuppressWarnings("unchecked")
 	public static <T> T allocateInstance(Class<T> cls) {
 		try {
-			return (T) unsafe.allocateInstance(cls);
-		} catch (InstantiationException ex) {
+			return (T) allocateInstance.invoke(internalUnsafe, cls);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
 			ex.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * 存引用字段
+	 * 
+	 * @param o
+	 * @param offset
+	 * @param x
+	 */
+	public static void putReference(Object o, long offset, Object x) {
+		try {
+			putReference.invoke(internalUnsafe, o, offset, x);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static Object getReference(Object o, long offset) {
+		try {
+			return getReference.invoke(internalUnsafe, o, offset);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_REFERENCE;
+	}
+
+	public static void putLong(Object o, long offset, long x) {
+		try {
+			putLong.invoke(internalUnsafe, o, offset, x);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static long getLong(Object o, long offset) {
+		try {
+			return (long) getLong.invoke(internalUnsafe, o, offset);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_lONG;
+	}
+
+	public static void putBoolean(Object o, long offset, boolean x) {
+		try {
+			putBoolean.invoke(internalUnsafe, o, offset, x);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static boolean getBoolean(Object o, long offset) {
+		try {
+			return (boolean) getBoolean.invoke(internalUnsafe, o, offset);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_BOOLEAN;
+	}
+
+	public static void putInt(Object o, long offset, int x) {
+		try {
+			putInt.invoke(internalUnsafe, o, offset, x);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static int getInt(Object o, long offset) {
+		try {
+			return (int) getInt.invoke(internalUnsafe, o, offset);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_INT;
+	}
+
+	public static void putDouble(Object o, long offset, double x) {
+		try {
+			putDouble.invoke(internalUnsafe, o, offset, x);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static double getDouble(Object o, long offset) {
+		try {
+			return (double) getDouble.invoke(internalUnsafe, o, offset);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_DOUBLE;
+	}
+
+	public static void putFloat(Object o, long offset, float x) {
+		try {
+			putFloat.invoke(internalUnsafe, o, offset, x);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static float getFloat(Object o, long offset) {
+		try {
+			return (float) getFloat.invoke(internalUnsafe, o, offset);
+		} catch (IllegalAccessException | InvocationTargetException ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_FLOAT;
 	}
 
 	/**
@@ -175,113 +282,162 @@ public class InternalUnsafe {
 	 */
 	public static void putObject(Object obj, Field field, Object value) {
 		if (Modifier.isStatic(field.getModifiers()))
-			unsafe.putObject(staticFieldBase(field), staticFieldOffset(field), value);
+			putReference(staticFieldBase(field), staticFieldOffset(field), value);
 		else
-			unsafe.putObject(obj, objectFieldOffset(field), value);
+			putReference(obj, objectFieldOffset(field), value);
 	}
 
 	public static void putObject(Object obj, String field, Object value) {
 		Field f = Reflection.getField(obj, field);
 		if (Modifier.isStatic(f.getModifiers()))
-			unsafe.putObject(staticFieldBase(f), staticFieldOffset(f), value);
+			putReference(staticFieldBase(f), staticFieldOffset(f), value);
 		else
-			unsafe.putObject(obj, objectFieldOffset(obj.getClass(), field), value);
+			putReference(obj, objectFieldOffset(obj.getClass(), field), value);
 	}
 
 	public static Object getObject(Object obj, Field field) {
 		if (Modifier.isStatic(field.getModifiers()))
-			return unsafe.getObject(staticFieldBase(field), staticFieldOffset(field));
+			return getReference(staticFieldBase(field), staticFieldOffset(field));
 		else
-			return unsafe.getObject(obj, objectFieldOffset(field));
+			return getReference(obj, objectFieldOffset(field));
 	}
 
 	public static Object getObject(Object obj, String field) {
 		Field f = Reflection.getField(obj, field);
 		if (Modifier.isStatic(f.getModifiers()))
-			return unsafe.getObject(staticFieldBase(f), staticFieldOffset(f));
+			return getReference(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return unsafe.getObject(obj, objectFieldOffset(obj.getClass(), field));
+			return getReference(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
 	public static void putLong(Object obj, Field field, long value) {
 		if (Modifier.isStatic(field.getModifiers()))
-			unsafe.putLong(staticFieldBase(field), staticFieldOffset(field), value);
+			putLong(staticFieldBase(field), staticFieldOffset(field), value);
 		else
-			unsafe.putLong(obj, objectFieldOffset(field), value);
+			putLong(obj, objectFieldOffset(field), value);
 	}
 
 	public static void putLong(Object obj, String field, long value) {
 		putLong(obj, Reflection.getField(obj, field), value);
 	}
 
-	public static Object getLong(Object obj, Field field) {
+	public static long getLong(Object obj, Field field) {
 		if (Modifier.isStatic(field.getModifiers()))
-			return unsafe.getLong(staticFieldBase(field), staticFieldOffset(field));
+			return getLong(staticFieldBase(field), staticFieldOffset(field));
 		else
-			return unsafe.getLong(obj, objectFieldOffset(field));
+			return getLong(obj, objectFieldOffset(field));
 	}
 
-	public static Object getLong(Object obj, String field) {
+	public static long getLong(Object obj, String field) {
 		Field f = Reflection.getField(obj, field);
 		if (Modifier.isStatic(f.getModifiers()))
-			return unsafe.getLong(staticFieldBase(f), staticFieldOffset(f));
+			return getLong(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return unsafe.getLong(obj, objectFieldOffset(obj.getClass(), field));
+			return getLong(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
-	public static void puttBoolean(Object obj, Field field, boolean value) {
+	public static void putBoolean(Object obj, Field field, boolean value) {
 		if (Modifier.isStatic(field.getModifiers()))
-			unsafe.putBoolean(staticFieldBase(field), staticFieldOffset(field), value);
+			putBoolean(staticFieldBase(field), staticFieldOffset(field), value);
 		else
-			unsafe.putBoolean(obj, objectFieldOffset(field), value);
+			putBoolean(obj, objectFieldOffset(field), value);
 	}
 
-	public static void puttBoolean(Object obj, String field, boolean value) {
-		puttBoolean(obj, Reflection.getField(obj, field), value);
+	public static void putBoolean(Object obj, String field, boolean value) {
+		putBoolean(obj, Reflection.getField(obj, field), value);
+	}
+
+	public static boolean getBoolean(Object obj, Field field) {
+		if (Modifier.isStatic(field.getModifiers()))
+			return getBoolean(staticFieldBase(field), staticFieldOffset(field));
+		else
+			return getBoolean(obj, objectFieldOffset(field));
+	}
+
+	public static boolean getBoolean(Object obj, String field) {
+		Field f = Reflection.getField(obj, field);
+		if (Modifier.isStatic(f.getModifiers()))
+			return getBoolean(staticFieldBase(f), staticFieldOffset(f));
+		else
+			return getBoolean(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
 	public static void putInt(Object obj, Field field, int value) {
 		if (Modifier.isStatic(field.getModifiers()))
-			unsafe.putInt(staticFieldBase(field), staticFieldOffset(field), value);
+			putInt(staticFieldBase(field), staticFieldOffset(field), value);
 		else
-			unsafe.putInt(obj, objectFieldOffset(field), value);
+			putInt(obj, objectFieldOffset(field), value);
 	}
 
 	public static void putInt(Object obj, String field, int value) {
 		putInt(obj, Reflection.getField(obj, field), value);
 	}
 
-	public static Object getInt(Object obj, Field field) {
+	public static int getInt(Object obj, Field field) {
 		if (Modifier.isStatic(field.getModifiers()))
-			return unsafe.getInt(staticFieldBase(field), staticFieldOffset(field));
+			return getInt(staticFieldBase(field), staticFieldOffset(field));
 		else
-			return unsafe.getInt(obj, objectFieldOffset(field));
+			return getInt(obj, objectFieldOffset(field));
 	}
 
-	public static Object getInt(Object obj, String field) {
+	public static int getInt(Object obj, String field) {
 		Field f = Reflection.getField(obj, field);
 		if (Modifier.isStatic(f.getModifiers()))
-			return unsafe.getInt(staticFieldBase(f), staticFieldOffset(f));
+			return getInt(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return unsafe.getInt(obj, objectFieldOffset(obj.getClass(), field));
+			return getInt(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
 	public static void putDouble(Object obj, Field field, double value) {
 		if (Modifier.isStatic(field.getModifiers()))
-			unsafe.putDouble(staticFieldBase(field), staticFieldOffset(field), value);
+			putDouble(staticFieldBase(field), staticFieldOffset(field), value);
 		else
-			unsafe.putDouble(obj, objectFieldOffset(field), value);
+			putDouble(obj, objectFieldOffset(field), value);
 	}
 
 	public static void putDouble(Object obj, String field, double value) {
 		putDouble(obj, Reflection.getField(obj, field), value);
 	}
 
+	public static double getDouble(Object obj, Field field) {
+		if (Modifier.isStatic(field.getModifiers()))
+			return getDouble(staticFieldBase(field), staticFieldOffset(field));
+		else
+			return getDouble(obj, objectFieldOffset(field));
+	}
+
+	public static double getDouble(Object obj, String field) {
+		Field f = Reflection.getField(obj, field);
+		if (Modifier.isStatic(f.getModifiers()))
+			return getDouble(staticFieldBase(f), staticFieldOffset(f));
+		else
+			return getDouble(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
 	public static void putFloat(Object obj, Field field, float value) {
 		if (Modifier.isStatic(field.getModifiers()))
-			unsafe.putFloat(staticFieldBase(field), staticFieldOffset(field), value);
+			putFloat(staticFieldBase(field), staticFieldOffset(field), value);
 		else
-			unsafe.putFloat(obj, objectFieldOffset(field), value);
+			putFloat(obj, objectFieldOffset(field), value);
+	}
+
+	public static void putFloat(Object obj, String field, float value) {
+		putFloat(obj, Reflection.getField(obj, field), value);
+	}
+
+	public static float getFloat(Object obj, Field field) {
+		if (Modifier.isStatic(field.getModifiers()))
+			return getFloat(staticFieldBase(field), staticFieldOffset(field));
+		else
+			return getFloat(obj, objectFieldOffset(field));
+	}
+
+	public static float getFloat(Object obj, String field) {
+		Field f = Reflection.getField(obj, field);
+		if (Modifier.isStatic(f.getModifiers()))
+			return getFloat(staticFieldBase(f), staticFieldOffset(f));
+		else
+			return getFloat(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
 	/**

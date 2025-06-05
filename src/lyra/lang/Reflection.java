@@ -8,10 +8,12 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import lyra.lang.base.ReflectionBase;
+
 /**
  * 反射工具，大部分功能可以直接使用Manipulator调用
  */
-public abstract class Reflection {
+public abstract class Reflection extends ReflectionBase {
 	private static MethodHandle Class_getDeclaredFields0;// Class.getDeclaredFields0无视反射访问权限获取字段
 	private static MethodHandle Class_getDeclaredMethods0;
 	private static MethodHandle Class_getDeclaredConstructors0;
@@ -36,7 +38,7 @@ public abstract class Reflection {
 
 	public static Field setAccessible(Class<?> cls, String field_name, boolean accessible) {
 		Field f = Reflection.getField(cls, field_name);
-		InternalUnsafe.setAccessible(f, accessible);
+		ReflectionBase.setAccessible(f, accessible);
 		return f;
 	}
 
@@ -201,7 +203,7 @@ public abstract class Reflection {
 		if (obj == null || field == null)
 			return null;
 		try {
-			InternalUnsafe.setAccessible(field, true);
+			ReflectionBase.setAccessible(field, true);
 			return field.get(obj);
 		} catch (IllegalAccessException ex) {
 			System.err.println("Reflection throws IllegalAccessException reading field " + field);
@@ -218,7 +220,7 @@ public abstract class Reflection {
 		if (obj == null || field == null)
 			return false;
 		try {
-			InternalUnsafe.setAccessible(field, true);
+			ReflectionBase.setAccessible(field, true);
 			field.set(obj, value);
 		} catch (IllegalAccessException ex) {
 			System.err.println("Reflection throws IllegalAccessException writing field " + field + " with value " + value + " in object " + obj.toString());
@@ -358,7 +360,7 @@ public abstract class Reflection {
 	public static Object invoke(Object obj, String method_name, Class<?>[] arg_types, Object... args) {
 		Method method = getMethod(obj, method_name, arg_types);
 		try {
-			InternalUnsafe.setAccessible(method, true);
+			ReflectionBase.setAccessible(method, true);
 			return method.invoke(obj, args);
 		} catch (IllegalAccessException | InvocationTargetException ex) {
 			System.err.println("Reflection throws exception invoking method " + method_name + " with arguments " + args + " in object " + obj.toString());
@@ -391,7 +393,7 @@ public abstract class Reflection {
 	public static Object construct(Object obj, Class<?>[] arg_types, Object... args) {
 		Constructor<?> constructor = getConstructor(obj, arg_types);
 		try {
-			InternalUnsafe.setAccessible(constructor, true);
+			ReflectionBase.setAccessible(constructor, true);
 			return constructor.newInstance(args);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
 			System.err.println("Reflection throws exception contructing " + obj.toString() + " with arguments " + args);

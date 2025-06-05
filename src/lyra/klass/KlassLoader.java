@@ -10,6 +10,7 @@ import lyra.filesystem.Packages;
 import lyra.filesystem.UriPath;
 import lyra.lang.JavaLang;
 import lyra.lang.Reflection;
+import lyra.object.ObjectManipulator;
 
 public class KlassLoader {
 	private static Method ClassLoader_m_defineClass;

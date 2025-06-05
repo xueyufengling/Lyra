@@ -7,23 +7,28 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 
+import lyra.lang.base.HandleBase;
+import lyra.lang.base.ReflectionBase;
+
 /**
  * 句柄操作相关，包括调用native方法<br>
+ * 不依赖<br>
  * 
  * @implNote 该类未引用任何本库的类，需要最先初始化
  */
-public class Handles {
-	private static final Lookup trusted_lookup;
+public class Handles extends HandleBase {
+	public static final Lookup IMPL_LOOKUP;
 
 	static {
-		Lookup IMPL_LOOKUP = null;
+		Lookup trusted_lookup = null;
 		try {
 			Field IMPL_LOOKUP_Field = Lookup.class.getDeclaredField("IMPL_LOOKUP");// 获取拥有所有权限的受信任的Lookup的唯一方法
-			IMPL_LOOKUP = (Lookup) (InternalUnsafe.setAccessible(IMPL_LOOKUP_Field, true).get(null));
-		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-			e.printStackTrace();
+			trusted_lookup = (Lookup) (ReflectionBase.setAccessible(IMPL_LOOKUP_Field, true).get(null));
+		} catch (IllegalArgumentException | NoSuchFieldException | SecurityException | IllegalAccessException ex) {
+			ex.printStackTrace();
 		}
-		trusted_lookup = IMPL_LOOKUP;
+		trusted_lookup = allocateTrustedLookup();
+		IMPL_LOOKUP = trusted_lookup;
 	}
 
 	/**
@@ -38,7 +43,7 @@ public class Handles {
 	public static MethodHandle findSpecialMethodHandle(Class<?> search_chain_start_subclazz, Class<?> search_chain_end_superclazz, String method_name, MethodType type) {
 		MethodHandles.Lookup lookup;
 		try {
-			lookup = MethodHandles.privateLookupIn(search_chain_start_subclazz, trusted_lookup); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
+			lookup = MethodHandles.privateLookupIn(search_chain_start_subclazz, IMPL_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
 			return lookup.findSpecial(search_chain_end_superclazz, method_name, type, search_chain_start_subclazz);
 		} catch (IllegalAccessException | NoSuchMethodException ex) {
 			ex.printStackTrace();
@@ -61,7 +66,7 @@ public class Handles {
 	public static MethodHandle findVirtualMethodHandle(Class<?> clazz, String method_name, MethodType type) {
 		MethodHandles.Lookup lookup;
 		try {
-			lookup = MethodHandles.privateLookupIn(clazz, trusted_lookup); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
+			lookup = MethodHandles.privateLookupIn(clazz, IMPL_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
 			return lookup.findVirtual(clazz, method_name, type);
 		} catch (IllegalAccessException | NoSuchMethodException ex) {
 			ex.printStackTrace();
@@ -84,7 +89,7 @@ public class Handles {
 	public static MethodHandle findStaticMethodHandle(Class<?> clazz, String method_name, MethodType type) {
 		MethodHandles.Lookup lookup;
 		try {
-			lookup = MethodHandles.privateLookupIn(clazz, trusted_lookup); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
+			lookup = MethodHandles.privateLookupIn(clazz, IMPL_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
 			return lookup.findStatic(clazz, method_name, type);
 		} catch (IllegalAccessException | NoSuchMethodException ex) {
 			ex.printStackTrace();
@@ -99,7 +104,7 @@ public class Handles {
 	public static VarHandle findVarHandle(Class<?> clazz, String field_name, Class<?> type) {
 		MethodHandles.Lookup lookup;
 		try {
-			lookup = MethodHandles.privateLookupIn(clazz, trusted_lookup); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
+			lookup = MethodHandles.privateLookupIn(clazz, IMPL_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
 			return lookup.findVarHandle(clazz, field_name, type);
 		} catch (IllegalAccessException | NoSuchFieldException ex) {
 			ex.printStackTrace();
@@ -110,7 +115,7 @@ public class Handles {
 	public static VarHandle findStaticVarHandle(Class<?> clazz, String field_name, Class<?> type) {
 		MethodHandles.Lookup lookup;
 		try {
-			lookup = MethodHandles.privateLookupIn(clazz, trusted_lookup); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
+			lookup = MethodHandles.privateLookupIn(clazz, IMPL_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
 			return lookup.findStaticVarHandle(clazz, field_name, type);
 		} catch (IllegalAccessException | NoSuchFieldException ex) {
 			ex.printStackTrace();

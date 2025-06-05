@@ -7,7 +7,7 @@ import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 
-import lyra.klass.ObjectManipulator;
+import lyra.object.ObjectManipulator;
 import lyra.vm.Vm;
 
 /**

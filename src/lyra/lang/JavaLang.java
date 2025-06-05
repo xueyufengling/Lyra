@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import lyra.klass.ObjectManipulator;
+import lyra.object.ObjectManipulator;
 
 /**
  * 修改反射安全限制等

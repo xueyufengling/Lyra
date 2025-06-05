@@ -1,9 +1,9 @@
-package lyra.filesystem.jar;
+package lyra.klass;
 
 import java.io.InputStream;
 
 import lyra.filesystem.FileSystem;
-import lyra.klass.KlassLoader;
+import lyra.filesystem.jar.JarFiles;
 import lyra.lang.JavaLang;
 
 public class JarKlassLoader {

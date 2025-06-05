@@ -1,4 +1,4 @@
-package lyra.klass;
+package lyra.object;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 
 import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
+import lyra.lang.base.ReflectionBase;
 import lyra.ntv.Oops;
 
 /**
@@ -23,7 +24,7 @@ public abstract class ObjectManipulator {
 	 * @return
 	 */
 	public static <AO extends AccessibleObject> AO removeAccessCheck(AO access_obj) {
-		return InternalUnsafe.setAccessible(access_obj, true);
+		return ReflectionBase.setAccessible(access_obj, true);
 	}
 
 	/**
@@ -34,7 +35,7 @@ public abstract class ObjectManipulator {
 	 * @return
 	 */
 	public static <AO extends AccessibleObject> AO recoveryAccessCheck(AO access_obj) {
-		return InternalUnsafe.setAccessible(access_obj, false);
+		return ReflectionBase.setAccessible(access_obj, false);
 	}
 
 	/**
@@ -153,7 +154,7 @@ public abstract class ObjectManipulator {
 	public static boolean setBoolean(Object obj, Field field, boolean value) {
 		if (field == null)
 			return false;
-		InternalUnsafe.puttBoolean(obj, field, value);
+		InternalUnsafe.putBoolean(obj, field, value);
 		return true;
 	}
 
@@ -219,5 +220,23 @@ public abstract class ObjectManipulator {
 
 	public static final Object cast(Object obj, String castType) {
 		return cast(obj, Oops.klassWord(castType));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static final <T> T safeCast(Object obj, T castTypeObj) {
+		return safeCast(obj, (Class<T>) castTypeObj.getClass());
+	}
+
+	/**
+	 * 安全的强制转换，没有继承关系的独立类的转换会抛出Exception。<br>
+	 * 主要用于Mixin。<br>
+	 * 
+	 * @param obj
+	 * @param castType
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static final <T> T safeCast(Object obj, Class<T> castType) {
+		return (T) (Object) obj;
 	}
 }

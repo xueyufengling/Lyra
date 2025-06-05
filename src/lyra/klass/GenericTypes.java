@@ -1,4 +1,4 @@
-package lyra.lang;
+package lyra.klass;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;

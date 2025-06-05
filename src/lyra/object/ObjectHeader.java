@@ -1,7 +1,7 @@
-package lyra.klass;
+package lyra.object;
 
 import lyra.lang.InternalUnsafe;
-import lyra.vm.Vm;
+import lyra.vm.base.VmBase;
 
 // @formatter:off
 /**Object Header由Mark Word和Klass Word组成<br>
@@ -155,6 +155,9 @@ public class ObjectHeader {
 	public static final int PTR_TO_HEAVYWEIGHT_MONITOR_OFFSET_64C = MARKWORD_OFFSET_64C;
 	public static final int PTR_TO_HEAVYWEIGHT_MONITOR_LENGTH_64C = 62;
 
+	public static final int INVALID_OFFSET = -1;
+	public static final int INVALID_LENGTH = -1;
+
 	/**
 	 * Klass Word的偏移量，单位bit
 	 */
@@ -176,11 +179,11 @@ public class ObjectHeader {
 	public static final int KLASS_WORD_BYTE_LENGTH;
 
 	static {
-		if (Vm.NATIVE_JVM_BIT_VERSION == 32) {
+		if (VmBase.NATIVE_JVM_BIT_VERSION == 32) {
 			KLASS_WORD_OFFSET = KLASS_OFFSET_32;
 			KLASS_WORD_LENGTH = KLASS_LENGTH_32;
-		} else if (Vm.NATIVE_JVM_BIT_VERSION == 64) {
-			if (Vm.NATIVE_JVM_COMPRESSED_OOPS) {
+		} else if (VmBase.NATIVE_JVM_BIT_VERSION == 64) {
+			if (VmBase.NATIVE_JVM_COMPRESSED_OOPS) {
 				KLASS_WORD_OFFSET = KLASS_OFFSET_64C;
 				KLASS_WORD_LENGTH = KLASS_LENGTH_64C;
 			} else {
@@ -188,8 +191,8 @@ public class ObjectHeader {
 				KLASS_WORD_LENGTH = KLASS_LENGTH_64;
 			}
 		} else {
-			KLASS_WORD_OFFSET = -1;
-			KLASS_WORD_LENGTH = -1;
+			KLASS_WORD_OFFSET = INVALID_OFFSET;
+			KLASS_WORD_LENGTH = INVALID_LENGTH;
 		}
 		KLASS_WORD_BYTE_OFFSET = KLASS_WORD_OFFSET / 8;
 		KLASS_WORD_BYTE_LENGTH = KLASS_WORD_LENGTH / 8;
@@ -203,11 +206,11 @@ public class ObjectHeader {
 	 */
 	public static final long getKlassWord(Object obj) {
 		if (KLASS_WORD_LENGTH == 32)
-			return InternalUnsafe.unsafe.getInt(obj, KLASS_WORD_BYTE_OFFSET);
+			return InternalUnsafe.getInt(obj, KLASS_WORD_BYTE_OFFSET);
 		else if (KLASS_WORD_LENGTH == 64)
-			return InternalUnsafe.unsafe.getLong(obj, KLASS_WORD_BYTE_OFFSET);
+			return InternalUnsafe.getLong(obj, KLASS_WORD_BYTE_OFFSET);
 		else
-			return -1;
+			return 0;
 	}
 
 	/**
@@ -219,10 +222,10 @@ public class ObjectHeader {
 	 */
 	public static final boolean setKlassWord(Object obj, long klassWord) {
 		if (KLASS_WORD_LENGTH == 32) {
-			InternalUnsafe.unsafe.putInt(obj, KLASS_WORD_BYTE_OFFSET, (int) klassWord);
+			InternalUnsafe.putInt(obj, KLASS_WORD_BYTE_OFFSET, (int) klassWord);
 			return true;
 		} else if (KLASS_WORD_LENGTH == 64) {
-			InternalUnsafe.unsafe.putLong(obj, KLASS_WORD_BYTE_OFFSET, klassWord);
+			InternalUnsafe.putLong(obj, KLASS_WORD_BYTE_OFFSET, klassWord);
 			return true;
 		}
 		return false;

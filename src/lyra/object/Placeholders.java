@@ -1,4 +1,4 @@
-package lyra.klass;
+package lyra.object;
 
 public final class Placeholders {
 
