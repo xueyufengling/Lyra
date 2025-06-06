@@ -3,8 +3,13 @@ package lyra.lang.base;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
+import lyra.lang.Reflection;
 import sun.reflect.ReflectionFactory;
 
 /**
@@ -12,6 +17,17 @@ import sun.reflect.ReflectionFactory;
  */
 public class ReflectionBase {
 	public static final ReflectionFactory reflectionFactory;
+	public static final Class<?> jdk_internal_reflect_Reflection;
+
+	/**
+	 * 反射的过滤字段表，位于该map的字段无法被反射获取
+	 */
+	private static VarHandle Reflection_fieldFilterMap;
+
+	/**
+	 * 反射的过滤方法表，位于该map的方法无法被反射获取
+	 */
+	private static VarHandle Reflection_methodFilterMap;
 
 	/**
 	 * 64位JVM的offset从12开始为数据段，此处为java.lang.reflect.AccessibleObject的boolean override成员，将该成员覆写为true可以无视权限调用Method、Field、Constructor
@@ -22,6 +38,15 @@ public class ReflectionBase {
 		reflectionFactory = ReflectionFactory.getReflectionFactory();
 		// 最优先获取java.lang.reflect.AccessibleObject的override以获取访问权限
 		java_lang_reflect_AccessibleObject_override = HandleBase.internalFindVarHandle(AccessibleObject.class, "override", boolean.class);
+		Class<?> ReflectionClass = null;
+		try {
+			ReflectionClass = Class.forName("jdk.internal.reflect.Reflection");
+			Reflection_fieldFilterMap = HandleBase.internalFindStaticVarHandle(ReflectionClass, "fieldFilterMap", Map.class);
+			Reflection_methodFilterMap = HandleBase.internalFindStaticVarHandle(ReflectionClass, "methodFilterMap", Map.class);
+		} catch (ClassNotFoundException ex) {
+			ex.printStackTrace();
+		}
+		jdk_internal_reflect_Reflection = ReflectionClass;
 	}
 
 	/**
@@ -36,7 +61,7 @@ public class ReflectionBase {
 	public static final <T> T delegateConstructInstance(Class<T> target, Constructor<?> targetConstructor, Object... args) {
 		try {
 			Constructor<?> newConstructor = (Constructor<?>) reflectionFactory.newConstructorForSerialization(target, targetConstructor);
-			return (T) newConstructor.newInstance(args);
+			return (T) newConstructor.newInstance(args);// 通过该方法拿到的构造函数默认可以直接调用，如果再手动setAccessible(true)则会报错无权限，需要开放模块。
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SecurityException ex) {
 			ex.printStackTrace();
 		}
@@ -73,5 +98,79 @@ public class ReflectionBase {
 
 	public static <AO extends AccessibleObject> AO setAccessible(AO accessibleObj) {
 		return setAccessible(accessibleObj, true);
+	}
+
+	/**
+	 * 在没有反射字段过滤器的环境下操作
+	 * 
+	 * @param op
+	 */
+	public static final void noReflectionFieldFilter(Runnable op) {
+		Map<Class<?>, Set<String>> filterMap = getReflectionFieldFilter();
+		removeReflectionFieldFilter();
+		op.run();
+		setReflectionFieldFilter(filterMap);
+	}
+
+	/**
+	 * 不经过反射过滤获取字段
+	 * 
+	 * @param cls
+	 * @param field_name
+	 * @return
+	 */
+	public static final Field fieldNoReflectionFilter(Class<?> cls, String field_name) {
+		Field f = null;
+		Map<Class<?>, Set<String>> filterMap = getReflectionFieldFilter();
+		removeReflectionFieldFilter();
+		f = Reflection.getField(cls, field_name);
+		setReflectionFieldFilter(filterMap);
+		return f;
+	}
+
+	/**
+	 * 获取反射过滤的字段
+	 * 
+	 * @return
+	 */
+	public static Map<Class<?>, Set<String>> getReflectionFieldFilter() {
+		return (Map<Class<?>, Set<String>>) Reflection_fieldFilterMap.get();
+	}
+
+	/**
+	 * 获取反射过滤的方法
+	 * 
+	 * @return
+	 */
+	public static Map<Class<?>, Set<String>> getReflectionMethodFilter() {
+		return (Map<Class<?>, Set<String>>) Reflection_methodFilterMap.get();
+	}
+
+	/**
+	 * 设置字段反射过滤，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会替换原有的过滤限制。危险操作。
+	 */
+	public static void setReflectionFieldFilter(Map<Class<?>, Set<String>> filter_map) {
+		Reflection_fieldFilterMap.set(filter_map);
+	}
+
+	/**
+	 * 设置方法反射过滤，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会替换原有的过滤限制。危险操作。
+	 */
+	public static void setReflectionMethodFilter(Map<Class<?>, Set<String>> filter_map) {
+		Reflection_methodFilterMap.set(filter_map);
+	}
+
+	/**
+	 * 移除反射过滤，使得全部字段均可通过反射获取，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会移除该限制。危险操作。
+	 */
+	public static void removeReflectionFieldFilter() {
+		setReflectionFieldFilter(new HashMap<Class<?>, Set<String>>());
+	}
+
+	/**
+	 * 移除反射过滤，使得全部方法均可通过反射获取，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会移除该限制。危险操作。
+	 */
+	public static void removeReflectionMethodFilter() {
+		setReflectionMethodFilter(new HashMap<Class<?>, Set<String>>());
 	}
 }

@@ -1,12 +1,7 @@
 package lyra.lang;
 
-import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import lyra.object.ObjectManipulator;
 
@@ -14,108 +9,22 @@ import lyra.object.ObjectManipulator;
  * 修改反射安全限制等
  */
 public class JavaLang {
+
 	private static Class<?> SharedSecrets;// jdk.internal.access.SharedSecrets
 	private static Object JavaLangAccess;// jdk.internal.access.JavaLangAccess;
 	private static Method getConstantPool;// 获取指定类的类常量池The ConstantPool，其中包含静态成员、方法列表等
 
-	/**
-	 * 反射的过滤字段表，位于该map的字段无法被反射获取
-	 */
-	private static VarHandle Reflection_fieldFilterMap;
-
-	/**
-	 * 反射的过滤方法表，位于该map的方法无法被反射获取
-	 */
-	private static VarHandle Reflection_methodFilterMap;
-
 	public static final StackWalker stackWalker;
 
 	static {
+		stackWalker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);// 最常用，最先初始化
 		try {
 			SharedSecrets = Class.forName("jdk.internal.access.SharedSecrets");
 			JavaLangAccess = getAccess("JavaLangAccess");
 			getConstantPool = ObjectManipulator.removeAccessCheck(JavaLangAccess.getClass().getDeclaredMethod("getConstantPool", Class.class));
-			Class<?> Reflection = Class.forName("jdk.internal.reflect.Reflection");
-			Reflection_fieldFilterMap = Handles.findStaticVarHandle(Reflection, "fieldFilterMap", Map.class);
-			Reflection_methodFilterMap = Handles.findStaticVarHandle(Reflection, "methodFilterMap", Map.class);
 		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
 			ex.printStackTrace();
 		}
-		stackWalker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-	}
-
-	/**
-	 * 在没有反射字段过滤器的环境下操作
-	 * 
-	 * @param op
-	 */
-	public static final void noReflectionFieldFilter(Runnable op) {
-		Map<Class<?>, Set<String>> filterMap = getReflectionFieldFilter();
-		removeReflectionFieldFilter();
-		op.run();
-		setReflectionFieldFilter(filterMap);
-	}
-
-	/**
-	 * 不经过反射过滤获取字段
-	 * 
-	 * @param cls
-	 * @param field_name
-	 * @return
-	 */
-	public static final Field fieldNoReflectionFilter(Class<?> cls, String field_name) {
-		Field f = null;
-		Map<Class<?>, Set<String>> filterMap = getReflectionFieldFilter();
-		removeReflectionFieldFilter();
-		f = Reflection.getField(cls, field_name);
-		setReflectionFieldFilter(filterMap);
-		return f;
-	}
-
-	/**
-	 * 获取反射过滤的字段
-	 * 
-	 * @return
-	 */
-	public static Map<Class<?>, Set<String>> getReflectionFieldFilter() {
-		return (Map<Class<?>, Set<String>>) Reflection_fieldFilterMap.get();
-	}
-
-	/**
-	 * 获取反射过滤的方法
-	 * 
-	 * @return
-	 */
-	public static Map<Class<?>, Set<String>> getReflectionMethodFilter() {
-		return (Map<Class<?>, Set<String>>) Reflection_methodFilterMap.get();
-	}
-
-	/**
-	 * 设置字段反射过滤，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会替换原有的过滤限制。危险操作。
-	 */
-	public static void setReflectionFieldFilter(Map<Class<?>, Set<String>> filter_map) {
-		Reflection_fieldFilterMap.set(filter_map);
-	}
-
-	/**
-	 * 设置方法反射过滤，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会替换原有的过滤限制。危险操作。
-	 */
-	public static void setReflectionMethodFilter(Map<Class<?>, Set<String>> filter_map) {
-		Reflection_methodFilterMap.set(filter_map);
-	}
-
-	/**
-	 * 移除反射过滤，使得全部字段均可通过反射获取，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会移除该限制。危险操作。
-	 */
-	public static void removeReflectionFieldFilter() {
-		setReflectionFieldFilter(new HashMap<Class<?>, Set<String>>());
-	}
-
-	/**
-	 * 移除反射过滤，使得全部方法均可通过反射获取，Java设置了一些非常核心的类无法通过反射获取即设置反射过滤，此操作将会移除该限制。危险操作。
-	 */
-	public static void removeReflectionMethodFilter() {
-		setReflectionMethodFilter(new HashMap<Class<?>, Set<String>>());
 	}
 
 	/**

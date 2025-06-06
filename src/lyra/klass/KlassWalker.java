@@ -1,7 +1,11 @@
 package lyra.klass;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import lyra.lang.Reflection;
@@ -15,7 +19,7 @@ public class KlassWalker {
 	@FunctionalInterface
 	public static interface FieldOperation {
 		/**
-		 * 遍历每个字段
+		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
 		 * 
 		 * @param f
 		 * @param isStatic 目标字段是否是静态的
@@ -27,7 +31,7 @@ public class KlassWalker {
 	@FunctionalInterface
 	public static interface SimpleFieldOperation {
 		/**
-		 * 遍历每个字段
+		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
 		 * 
 		 * @param f
 		 * @param isStatic 目标字段是否是静态的
@@ -133,4 +137,93 @@ public class KlassWalker {
 			op.operate(f.getName(), f.getType(), isStatic, value, annotation);
 		});
 	}
+
+	@FunctionalInterface
+	public static interface MethodOperation {
+		/**
+		 * 遍历每个方法，处理的是root原对象，即反射缓存的对象。
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public void operate(Method f, boolean isStatic);
+	}
+
+	public static void walkFields(Class<?> cls, MethodOperation op) {
+		Method[] methods = Reflection.getDeclaredMethods(cls);
+		for (Method m : methods) {
+			op.operate(m, Modifier.isStatic(m.getModifiers()));
+		}
+	}
+
+	@FunctionalInterface
+	public static interface ConstructorOperation {
+		/**
+		 * 遍历每个构造函数，处理的是root原对象，即反射缓存的对象。
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public void operate(Constructor<?> f, boolean isStatic);
+	}
+
+	public static void walkFields(Class<?> cls, ConstructorOperation op) {
+		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
+		for (Constructor<?> c : constructors) {
+			op.operate(c, Modifier.isStatic(c.getModifiers()));
+		}
+	}
+
+	@FunctionalInterface
+	public static interface ExecutableOperation {
+		/**
+		 * 遍历每个方法或构造函数，处理的是root原对象，即反射缓存的对象。
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public void operate(Executable f, boolean isStatic);
+	}
+
+	public static void walkExecutables(Class<?> cls, ExecutableOperation op) {
+		Method[] methods = Reflection.getDeclaredMethods(cls);
+		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
+		for (Constructor<?> c : constructors) {
+			op.operate(c, Modifier.isStatic(c.getModifiers()));
+		}
+		for (Method m : methods) {
+			op.operate(m, Modifier.isStatic(m.getModifiers()));
+		}
+	}
+
+	@FunctionalInterface
+	public static interface AccessibleObjectOperation {
+		/**
+		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public void operate(AccessibleObject ao, boolean isStatic);
+	}
+
+	public static void walkAccessibleObjects(Class<?> cls, AccessibleObjectOperation op) {
+		Field[] fields = Reflection.getDeclaredFields(cls);
+		Method[] methods = Reflection.getDeclaredMethods(cls);
+		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
+		for (Field f : fields) {
+			op.operate(f, Modifier.isStatic(f.getModifiers()));
+		}
+		for (Constructor<?> c : constructors) {
+			op.operate(c, Modifier.isStatic(c.getModifiers()));
+		}
+		for (Method m : methods) {
+			op.operate(m, Modifier.isStatic(m.getModifiers()));
+		}
+	}
+
 }

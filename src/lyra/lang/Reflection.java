@@ -15,22 +15,28 @@ import lyra.lang.base.ReflectionBase;
  */
 public abstract class Reflection extends ReflectionBase {
 	private static MethodHandle Class_getDeclaredFields0;// Class.getDeclaredFields0无视反射访问权限获取字段
+	private static MethodHandle Class_privateGetDeclaredFields;
 	private static MethodHandle Class_getDeclaredMethods0;
+	private static MethodHandle Class_privateGetDeclaredMethods;
 	private static MethodHandle Class_getDeclaredConstructors0;
 	private static MethodHandle Class_searchFields;
 	private static MethodHandle Class_searchMethods;
 	private static MethodHandle Class_getConstructor0;
 	private static MethodHandle Class_forName0;
+	private static MethodHandle Reflection_isCallerSensitive;
 
 	static {
 		try {
 			Class_getDeclaredFields0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredFields0", Field[].class, boolean.class);
+			Class_privateGetDeclaredFields = Handles.findSpecialMethodHandle(Class.class, Class.class, "privateGetDeclaredFields", Field[].class, boolean.class);
 			Class_getDeclaredMethods0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredMethods0", Method[].class, boolean.class);
+			Class_privateGetDeclaredMethods = Handles.findSpecialMethodHandle(Class.class, Class.class, "privateGetDeclaredMethods", Method[].class, boolean.class);
 			Class_getDeclaredConstructors0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getDeclaredConstructors0", Constructor[].class, boolean.class);
 			Class_searchFields = Handles.findStaticMethodHandle(Class.class, "searchFields", Field.class, Field[].class, String.class);
 			Class_searchMethods = Handles.findStaticMethodHandle(Class.class, "searchMethods", Method.class, Method[].class, String.class, Class[].class);
 			Class_getConstructor0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getConstructor0", Constructor.class, Class[].class, int.class);
 			Class_forName0 = Handles.findStaticMethodHandle(Class.class, "forName0", Class.class, String.class, boolean.class, ClassLoader.class, Class.class);
+			Reflection_isCallerSensitive = Handles.findStaticMethodHandle(ReflectionBase.jdk_internal_reflect_Reflection, "isCallerSensitive", boolean.class, Method.class);
 		} catch (SecurityException | IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
@@ -43,13 +49,13 @@ public abstract class Reflection extends ReflectionBase {
 	}
 
 	/**
-	 * 获取对象定义的字段原对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部字段。<br>
+	 * 获取对象定义的字段原root对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部字段。<br>
 	 * 注意：本方法没有拷贝对象，因此对返回字段的任何修改都将反应在反射系统获取的所有的复制对象中
 	 * 
 	 * @param clazz 要获取的类
 	 * @return 字段列表
 	 */
-	public static Field[] getDeclaredFields(Class<?> clazz, boolean publicOnly) {
+	public static Field[] getDeclaredFields0(Class<?> clazz, boolean publicOnly) {
 		try {
 			return (Field[]) Class_getDeclaredFields0.invokeExact(clazz, publicOnly);
 		} catch (Throwable ex) {
@@ -58,8 +64,30 @@ public abstract class Reflection extends ReflectionBase {
 		return null;
 	}
 
+	public static Field[] getDeclaredFields0(Class<?> clazz) {
+		return getDeclaredFields0(clazz, false);
+	}
+
+	public static Field getDeclaredField0(Class<?> clazz, String field_name) {
+		try {
+			return (Field) Class_searchFields.invokeExact(getDeclaredFields0(clazz), field_name);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static Field[] getDeclaredFields(Class<?> clazz, boolean publicOnly) {
+		try {
+			return (Field[]) Class_privateGetDeclaredFields.invokeExact(clazz, publicOnly);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
 	public static Field[] getDeclaredFields(Class<?> clazz) {
-		return getDeclaredFields(clazz, false);
+		return getDeclaredFields0(clazz, false);
 	}
 
 	public static Field getDeclaredField(Class<?> clazz, String field_name) {
@@ -72,14 +100,43 @@ public abstract class Reflection extends ReflectionBase {
 	}
 
 	/**
-	 * 获取对象定义的方法原对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部方法
+	 * 获取对象定义的方法原root对象，无视反射过滤和访问权限，直接调用JVM内部的native方法获取全部方法
 	 * 
 	 * @param clazz 要获取的类
 	 * @return 字段列表
 	 */
-	public static Method[] getDeclaredMethods(Class<?> clazz, boolean publicOnly) {
+	public static Method[] getDeclaredMethods0(Class<?> clazz, boolean publicOnly) {
 		try {
 			return (Method[]) Class_getDeclaredMethods0.invokeExact(clazz, false);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static Method[] getDeclaredMethods0(Class<?> clazz) {
+		return getDeclaredMethods0(clazz, false);
+	}
+
+	public static Method getDeclaredMethod0(Class<?> clazz, String method_name, Class<?>... arg_types) {
+		try {
+			return (Method) Class_searchMethods.invokeExact(getDeclaredMethods0(clazz), method_name, arg_types);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * 获取Class对象缓存的root对象，除非类被重载否则不再改变。
+	 * 
+	 * @param clazz
+	 * @param publicOnly
+	 * @return
+	 */
+	public static Method[] getDeclaredMethods(Class<?> clazz, boolean publicOnly) {
+		try {
+			return (Method[]) Class_privateGetDeclaredMethods.invokeExact(clazz, false);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -108,8 +165,12 @@ public abstract class Reflection extends ReflectionBase {
 		return null;
 	}
 
+	public static <T> Constructor<T>[] getDeclaredConstructors(Class<?> clazz) {
+		return getDeclaredConstructors(clazz, false);
+	}
+
 	/**
-	 * 获取构造函数
+	 * 获取root构造函数
 	 * 
 	 * @param <T>
 	 * @param clazz
@@ -425,5 +486,20 @@ public abstract class Reflection extends ReflectionBase {
 	 */
 	public static boolean is(Field f, Class<?> type) {
 		return type.isAssignableFrom(f.getType());
+	}
+
+	/**
+	 * jdk.internal.reflect.Reflection.isCallerSensitive()
+	 * 
+	 * @param m
+	 * @return
+	 */
+	public static boolean isCallerSensitive(Method m) {
+		try {
+			return (boolean) Reflection_isCallerSensitive.invokeExact(m);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return false;
 	}
 }

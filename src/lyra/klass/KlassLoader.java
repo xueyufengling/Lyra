@@ -1,8 +1,10 @@
 package lyra.klass;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -10,6 +12,7 @@ import lyra.filesystem.Packages;
 import lyra.filesystem.UriPath;
 import lyra.lang.JavaLang;
 import lyra.lang.Reflection;
+import lyra.lang.base.ReflectionBase;
 import lyra.object.ObjectManipulator;
 
 public class KlassLoader {
@@ -21,7 +24,7 @@ public class KlassLoader {
 	public static final String default_parent_field_name = "parent";
 
 	static {
-		JavaLang.noReflectionFieldFilter(() -> {
+		ReflectionBase.noReflectionFieldFilter(() -> {
 			ClassLoader_m_defineClass = Reflection.getMethod(ClassLoader.class, "defineClass", new Class<?>[] { String.class, byte[].class, int.class, int.class, ProtectionDomain.class });
 			ClassLoader_m_findClass = Reflection.getMethod(ClassLoader.class, "findClass", new Class<?>[] { String.class });
 			ClassLoader_f_parent = Reflection.getField(ClassLoader.class, "parent");
@@ -147,7 +150,7 @@ public class KlassLoader {
 	 * @return
 	 */
 	private static final Field resolveParentLoaderField(ClassLoader target, String dest_parent_field_name) {
-		return dest_parent_field_name.equals(default_parent_field_name) ? ClassLoader_f_parent : JavaLang.fieldNoReflectionFilter(target.getClass(), dest_parent_field_name);
+		return dest_parent_field_name.equals(default_parent_field_name) ? ClassLoader_f_parent : ReflectionBase.fieldNoReflectionFilter(target.getClass(), dest_parent_field_name);
 	}
 
 	/**
@@ -361,6 +364,26 @@ public class KlassLoader {
 	}
 
 	/**
+	 * 获取一个类加载器加载的类，只包含它本身的类，不包含其委托给父类加载的类。<br>
+	 * 注意，该数组原则上只有JVM内部使用，它不是线程安全的，该方法得到的引用不可直接访问或操作，否则会抛出并行修改错误。<br>
+	 * 需要使用可以访问的数组，请使用{@code loadedClassesCopy()}
+	 * 
+	 * @param loader
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static ArrayList<Class<?>> loadedClasses(ClassLoader loader) {
+		if (loader != null)
+			return (ArrayList<Class<?>>) ObjectManipulator.access(loader, "classes");
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static ArrayList<Class<?>> loadedClassesCopy(ClassLoader loader) {
+		return (ArrayList<Class<?>>) loadedClasses(loader).clone();
+	}
+
+	/**
 	 * 获取已经加载的包列表
 	 * 
 	 * @return
@@ -379,5 +402,22 @@ public class KlassLoader {
 	public static String[] getLoadedPackageNames() {
 		Class<?> caller = JavaLang.getOuterCallerClass();
 		return getLoadedPackageNames(caller.getClassLoader());
+	}
+
+	/**
+	 * 将类设置为系统类
+	 * 
+	 * @param cls
+	 */
+	public static void setAsSystemLoaded(Class<?> cls) {
+		KlassLoader.setClassLoader(cls, null);// 将m所在类的类加载器设置为BootstrapClassLoader
+	}
+
+	public static void setAsSystemLoaded(Field f) {
+		setAsSystemLoaded(f.getDeclaringClass());
+	}
+
+	public static void setAsSystemLoaded(Executable e) {
+		setAsSystemLoaded(e.getDeclaringClass());
 	}
 }

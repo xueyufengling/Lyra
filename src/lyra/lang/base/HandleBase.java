@@ -2,30 +2,30 @@ package lyra.lang.base;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.Modifier;
 import java.lang.invoke.VarHandle;
 
 /**
  * 没有依赖任何lyra.lang.base外部类，仅使用标准API的Handle类
  */
 public class HandleBase {
+	public static final int PUBLIC = Modifier.PUBLIC;
+	public static final int PRIVATE = Modifier.PRIVATE;
+	public static final int PROTECTED = Modifier.PROTECTED;
+	public static final int PACKAGE = Modifier.STATIC;
+	public static final int MODULE = PACKAGE << 1;
+	public static final int UNCONDITIONAL = PACKAGE << 2;
+	public static final int ORIGINAL = PACKAGE << 3;
+
+	public static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE | MODULE | UNCONDITIONAL | ORIGINAL);
+	public static final int FULL_POWER_MODES = (ALL_MODES & ~UNCONDITIONAL);
 
 	public static final int TRUSTED = -1;
 
 	public static final Lookup TRUSTED_LOOKUP;
-	/**
-	 * MethodHandles内的隐藏类的Lookup
-	 */
-	public static final Lookup HIDDEN_CLASS_LOOKUP;
 
 	static {
-		TRUSTED_LOOKUP = allocateLookup();
-		Lookup lookup = null;
-		try {
-			// lookup = (Lookup) MethodHandles.lookup().defineHiddenClass(new byte[0], true).lookupClass().getDeclaredField("lookup").get(null);
-		} catch (IllegalArgumentException | SecurityException ex) {
-			ex.printStackTrace();
-		}
-		HIDDEN_CLASS_LOOKUP = lookup;
+		TRUSTED_LOOKUP = allocateTrustedLookup();
 	}
 
 	/**

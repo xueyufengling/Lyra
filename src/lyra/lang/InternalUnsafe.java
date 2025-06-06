@@ -117,7 +117,7 @@ public class InternalUnsafe {
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
-		return INVALID_FIELD_OFFSET;
+		return UNREACHABLE_lONG;
 	}
 
 	public static long objectFieldOffset(Class<?> cls, String field_name) {
@@ -126,7 +126,7 @@ public class InternalUnsafe {
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
-		return INVALID_FIELD_OFFSET;
+		return UNREACHABLE_lONG;
 	}
 
 	public static Object staticFieldBase(Field field) {
@@ -144,7 +144,7 @@ public class InternalUnsafe {
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
-		return INVALID_FIELD_OFFSET;
+		return UNREACHABLE_lONG;
 	}
 
 	/**
@@ -160,7 +160,7 @@ public class InternalUnsafe {
 		} catch (IllegalAccessException | InvocationTargetException ex) {
 			ex.printStackTrace();
 		}
-		return null;
+		return (T) UNREACHABLE_REFERENCE;
 	}
 
 	/**

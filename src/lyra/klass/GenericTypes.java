@@ -97,4 +97,30 @@ public class GenericTypes {
 		}
 		return classes;
 	}
+
+	public static Class<?>[] classes(Class<?> target) {
+		Type directSuperClassGenericType = target.getGenericSuperclass();
+		if (directSuperClassGenericType instanceof ParameterizedType superParameterizedType) {
+			Type[] actualTypeArguments = superParameterizedType.getActualTypeArguments();
+			Class<?>[] classes = new Class[actualTypeArguments.length];
+			for (int idx = 0; idx < actualTypeArguments.length; ++idx) {
+				if (actualTypeArguments[idx] instanceof Class cls) {
+					classes[idx] = cls;
+					continue;
+				}
+				// 如果参数还是泛型类，就直接getRawType()
+				else if (actualTypeArguments[idx] instanceof ParameterizedType parameterizedType) {
+					Type rawType = parameterizedType.getRawType();
+					if (rawType instanceof Class cls) {
+						classes[idx] = cls;
+						continue;
+					}
+				} else
+					classes[idx] = Object.class;
+			}
+			return classes;
+		} else if (directSuperClassGenericType instanceof Class directSuperClassGenericClass)
+			return new Class<?>[] { directSuperClassGenericClass };
+		return new Class<?>[] {};
+	}
 }

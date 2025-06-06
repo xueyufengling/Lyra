@@ -17,7 +17,7 @@ public class KlassPath {
 	 * @param clazz
 	 * @return
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = false)
 	public static String klassCodeSourceLocation(Class<?> clazz) {
 		URL location = clazz.getProtectionDomain().getCodeSource().getLocation();
 		if (location != null) {
@@ -31,6 +31,7 @@ public class KlassPath {
 	}
 
 	/**
+	 * 注意！Class的加载器被KlassLoader.setClassLoader()更改后，该方法将无法解析URI，只能返回null！
 	 * 获取指定class的文件所在目录URI，可能是本地class文件，也可能是jar打包的class文件<br>
 	 * 例如Minecraft模组BlueArchive: Rendezvous的模组jar中主类URI路径为/D:/JavaProjects/testClient/.minecraft/mods/ba-1.0.0.jar#191!/ba<br>
 	 * 其中!为Java URL的分隔符，前面是jar包路径，后面是jar包内的路径。<br>
