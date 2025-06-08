@@ -410,7 +410,7 @@ public class KlassLoader {
 	 * @param cls
 	 */
 	public static void setAsSystemLoaded(Class<?> cls) {
-		KlassLoader.setClassLoader(cls, null);// 将m所在类的类加载器设置为BootstrapClassLoader
+		KlassLoader.setClassLoader(cls, null);// 将cls的类加载器设置为BootstrapClassLoader
 	}
 
 	public static void setAsSystemLoaded(Field f) {

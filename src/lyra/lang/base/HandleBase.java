@@ -22,11 +22,10 @@ public class HandleBase {
 
 	public static final int TRUSTED = -1;
 
-	public static final Lookup TRUSTED_LOOKUP;
+	static Lookup TRUSTED_LOOKUP;
 
 	static {
-		TRUSTED_LOOKUP = allocateTrustedLookup();
-		ReflectionBase.cinit();
+		ReflectionBase.init();
 	}
 
 	/**

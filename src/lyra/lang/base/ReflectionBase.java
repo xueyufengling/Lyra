@@ -35,22 +35,25 @@ public class ReflectionBase {
 	private static VarHandle java_lang_reflect_AccessibleObject_override;
 
 	static {
-		reflectionFactory = ReflectionFactory.getReflectionFactory();
+		reflectionFactory = ReflectionFactory.getReflectionFactory(); // 最优先获取java.lang.reflect.AccessibleObject的override以获取访问权限
+		HandleBase.TRUSTED_LOOKUP = HandleBase.allocateTrustedLookup();
+		java_lang_reflect_AccessibleObject_override = HandleBase.internalFindVarHandle(AccessibleObject.class, "override", boolean.class);
 		Class<?> ReflectionClass = null;
 		try {
 			ReflectionClass = Class.forName("jdk.internal.reflect.Reflection");
-			initialize_class(HandleBase.class);
 		} catch (ClassNotFoundException ex) {
 			ex.printStackTrace();
 		}
 		jdk_internal_reflect_Reflection = ReflectionClass;
-	}
-
-	static final void cinit() {
-		// 最优先获取java.lang.reflect.AccessibleObject的override以获取访问权限
-		java_lang_reflect_AccessibleObject_override = HandleBase.internalFindVarHandle(AccessibleObject.class, "override", boolean.class);
 		Reflection_fieldFilterMap = HandleBase.internalFindStaticVarHandle(jdk_internal_reflect_Reflection, "fieldFilterMap", Map.class);
 		Reflection_methodFilterMap = HandleBase.internalFindStaticVarHandle(jdk_internal_reflect_Reflection, "methodFilterMap", Map.class);
+	}
+
+	/**
+	 * 供HandleBase初始化本类
+	 */
+	static final void init() {
+
 	}
 
 	/**
