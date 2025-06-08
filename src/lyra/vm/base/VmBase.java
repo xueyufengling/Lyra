@@ -11,7 +11,7 @@ import com.sun.management.VMOption;
 public abstract class VmBase {
 	public static final int NATIVE_JVM_BIT_VERSION;// 64或32
 	public static final boolean NATIVE_JVM_HOTSPOT;// JVM是否是HotSpot，如果是才能获取JVM参数进而判断指针是否压缩
-	public static final boolean NATIVE_JVM_COMPRESSED_OOPS;
+	public static final boolean UseCompressedOops;
 
 	/**
 	 * HotSpotDiagnosticMXBean的实现类是 com.sun.management.internal.HotSpotDiagnostic
@@ -38,7 +38,7 @@ public abstract class VmBase {
 				compressed_oops = getBooleanOption("UseCompressedOops");
 		}
 		NATIVE_JVM_HOTSPOT = hotspot;
-		NATIVE_JVM_COMPRESSED_OOPS = compressed_oops;
+		UseCompressedOops = compressed_oops;
 	}
 
 	public static VMOption getVmOption(String name) {

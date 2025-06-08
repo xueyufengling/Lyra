@@ -10,6 +10,21 @@ import lyra.object.ObjectManipulator;
  */
 public class JavaLang {
 
+	/**
+	 * 栈追踪时执行的操作
+	 */
+	@FunctionalInterface
+	public interface StackTrackOperation {
+		public void operate(StackWalker.StackFrame stackFrame);
+	}
+
+	/**
+	 * 栈追踪设置
+	 */
+	public enum StackTrackOption {
+		SKIP_COUNT_BY_FRAME, SKIP_COUNT_BY_CLASS
+	}
+
 	private static Class<?> SharedSecrets;// jdk.internal.access.SharedSecrets
 	private static Object JavaLangAccess;// jdk.internal.access.JavaLangAccess;
 	private static Method getConstantPool;// 获取指定类的类常量池The ConstantPool，其中包含静态成员、方法列表等

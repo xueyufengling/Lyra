@@ -32,21 +32,35 @@ public class ReflectionBase {
 	/**
 	 * 64位JVM的offset从12开始为数据段，此处为java.lang.reflect.AccessibleObject的boolean override成员，将该成员覆写为true可以无视权限调用Method、Field、Constructor
 	 */
-	private static final VarHandle java_lang_reflect_AccessibleObject_override;
+	private static VarHandle java_lang_reflect_AccessibleObject_override;
 
 	static {
 		reflectionFactory = ReflectionFactory.getReflectionFactory();
-		// 最优先获取java.lang.reflect.AccessibleObject的override以获取访问权限
-		java_lang_reflect_AccessibleObject_override = HandleBase.internalFindVarHandle(AccessibleObject.class, "override", boolean.class);
 		Class<?> ReflectionClass = null;
 		try {
 			ReflectionClass = Class.forName("jdk.internal.reflect.Reflection");
-			Reflection_fieldFilterMap = HandleBase.internalFindStaticVarHandle(ReflectionClass, "fieldFilterMap", Map.class);
-			Reflection_methodFilterMap = HandleBase.internalFindStaticVarHandle(ReflectionClass, "methodFilterMap", Map.class);
+			initialize_class(HandleBase.class);
 		} catch (ClassNotFoundException ex) {
 			ex.printStackTrace();
 		}
 		jdk_internal_reflect_Reflection = ReflectionClass;
+	}
+
+	static final void cinit() {
+		// 最优先获取java.lang.reflect.AccessibleObject的override以获取访问权限
+		java_lang_reflect_AccessibleObject_override = HandleBase.internalFindVarHandle(AccessibleObject.class, "override", boolean.class);
+		Reflection_fieldFilterMap = HandleBase.internalFindStaticVarHandle(jdk_internal_reflect_Reflection, "fieldFilterMap", Map.class);
+		Reflection_methodFilterMap = HandleBase.internalFindStaticVarHandle(jdk_internal_reflect_Reflection, "methodFilterMap", Map.class);
+	}
+
+	/**
+	 * 初始化一个类
+	 * 
+	 * @param cls
+	 * @throws ClassNotFoundException
+	 */
+	public static final void initialize_class(Class<?> cls) throws ClassNotFoundException {
+		Class.forName(cls.getName(), true, cls.getClassLoader());
 	}
 
 	/**

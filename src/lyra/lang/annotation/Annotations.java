@@ -45,7 +45,7 @@ public class Annotations {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static void enableMirrorAnnotations() {
+	public static void enableIntrinsicAnnotations() {
 		enableMirrorAnnotations(CallerSensitive.CallerSensitiveMirrorImpl.class);
 	}
 

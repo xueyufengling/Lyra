@@ -1,4 +1,4 @@
-package lyra.agent;
+package lyra.vm.agent;
 
 import java.io.IOException;
 

@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import lyra.internal.oops.markWord;
 import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
 import lyra.lang.base.ReflectionBase;
@@ -206,12 +207,12 @@ public abstract class ObjectManipulator {
 	}
 
 	public static final Object cast(Object obj, long castTypeKlassWord) {
-		ObjectHeader.setKlassWord(obj, castTypeKlassWord);
+		markWord.set_klass_word(obj, castTypeKlassWord);
 		return obj;
 	}
 
 	public static final Object cast(Object obj, Object castTypeObj) {
-		return cast(obj, ObjectHeader.getKlassWord(castTypeObj));
+		return cast(obj, markWord.get_klass_word(castTypeObj));
 	}
 
 	public static final Object cast(Object obj, Class<?> castType) {

@@ -1,54 +1,77 @@
 package lyra.lang;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 
 import lyra.lang.base.HandleBase;
-import lyra.lang.base.ReflectionBase;
 import lyra.object.ObjectManipulator;
 
-public class InternalUnsafe {
+public final class InternalUnsafe {
 	private static Class<?> internalUnsafeClass;
 	static Object internalUnsafe;
 
-	private static Method objectFieldOffset$Field;// 没有检查的jdk.internal.misc.Unsafe.objectFieldOffset()
-	private static Method objectFieldOffset$Class$String;
-	private static Method staticFieldBase;
-	private static Method staticFieldOffset;
+	private static MethodHandle objectFieldOffset$Field;// 没有检查的jdk.internal.misc.Unsafe.objectFieldOffset()
+	private static MethodHandle objectFieldOffset$Class$String;
+	private static MethodHandle staticFieldBase;
+	private static MethodHandle staticFieldOffset;
 
-	private static Method defineClass;
-	private static Method allocateInstance;
+	private static MethodHandle getAddress;
+	private static MethodHandle putAddress;
+	private static MethodHandle addressSize;
+	private static MethodHandle getUncompressedObject;
+	private static MethodHandle allocateMemory;
+	private static MethodHandle freeMemory;
 
-	private static Method putReference;
-	private static Method getReference;
+	private static MethodHandle defineClass;
+	private static MethodHandle allocateInstance;
 
-	private static Method putLong;
-	private static Method getLong;
+	private static MethodHandle arrayBaseOffset;
+	private static MethodHandle arrayIndexScale;
 
-	private static Method putBoolean;
-	private static Method getBoolean;
+	private static MethodHandle putReference;
+	private static MethodHandle getReference;
 
-	private static Method putInt;
-	private static Method getInt;
+	private static MethodHandle putByte;
+	private static MethodHandle getByte;
 
-	private static Method putDouble;
-	private static Method getDouble;
+	private static MethodHandle putChar;
+	private static MethodHandle getChar;
 
-	private static Method putFloat;
-	private static Method getFloat;
+	private static MethodHandle putBoolean;
+	private static MethodHandle getBoolean;
+
+	private static MethodHandle putShort;
+	private static MethodHandle getShort;
+
+	private static MethodHandle putInt;
+	private static MethodHandle getInt;
+
+	private static MethodHandle putLong;
+	private static MethodHandle getLong;
+
+	private static MethodHandle putDouble;
+	private static MethodHandle getDouble;
+
+	private static MethodHandle putFloat;
+	private static MethodHandle getFloat;
 
 	public static final long INVALID_FIELD_OFFSET = -1;
 
+	private static final byte UNREACHABLE_BYTE = -1;
+	private static final char UNREACHABLE_CHAR = 0;
+	private static final short UNREACHABLE_SHORT = -1;
 	private static final long UNREACHABLE_lONG = -1;
 	private static final Object UNREACHABLE_REFERENCE = null;
 	private static final boolean UNREACHABLE_BOOLEAN = false;
 	private static final int UNREACHABLE_INT = -1;
 	private static final double UNREACHABLE_DOUBLE = -1;
 	private static final float UNREACHABLE_FLOAT = -1;
+
+	public static final int ADDRESS_SIZE;
+	public static final int ARRAY_OBJECT_BASE_OFFSET;
 
 	static {
 		VarHandle theInternalUnsafe;
@@ -61,29 +84,53 @@ public class InternalUnsafe {
 		}
 		if (internalUnsafe == null)
 			System.err.println("Get jdk.internal.misc.Unsafe instance failed! Lyra library will be broken.");
-		try {
-			objectFieldOffset$Field = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("objectFieldOffset", Field.class), true);
-			objectFieldOffset$Class$String = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("objectFieldOffset", Class.class, String.class), true);
-			staticFieldBase = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("staticFieldBase", Field.class), true);
-			staticFieldOffset = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("staticFieldOffset", Field.class), true);
-			defineClass = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class), true);
-			allocateInstance = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("allocateInstance", Class.class), true);
-			putReference = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putReference", Object.class, long.class, Object.class), true);
-			getReference = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getReference", Object.class, long.class), true);
-			putLong = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putLong", Object.class, long.class, long.class), true);
-			getLong = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getLong", Object.class, long.class), true);
-			putBoolean = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putBoolean", Object.class, long.class, boolean.class), true);
-			getBoolean = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getBoolean", Object.class, long.class), true);
-			putInt = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putInt", Object.class, long.class, int.class), true);
-			getInt = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getInt", Object.class, long.class), true);
-			putDouble = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putDouble", Object.class, long.class, double.class), true);
-			getDouble = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getDouble", Object.class, long.class), true);
-			putFloat = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("putFloat", Object.class, long.class, float.class), true);
-			getFloat = ReflectionBase.setAccessible(internalUnsafeClass.getDeclaredMethod("getFloat", Object.class, long.class), true);
-		} catch (NoSuchMethodException | SecurityException ex) {
-			ex.printStackTrace();
-		}
+		objectFieldOffset$Field = Handles.findSpecialMethodHandle(internalUnsafeClass, "objectFieldOffset", long.class, Field.class);
+		objectFieldOffset$Class$String = Handles.findSpecialMethodHandle(internalUnsafeClass, "objectFieldOffset", long.class, Class.class, String.class);
+		staticFieldBase = Handles.findSpecialMethodHandle(internalUnsafeClass, "staticFieldBase", Object.class, Field.class);
+		staticFieldOffset = Handles.findSpecialMethodHandle(internalUnsafeClass, "staticFieldOffset", long.class, Field.class);
 
+		getAddress = Handles.findSpecialMethodHandle(internalUnsafeClass, "getAddress", long.class, Object.class, long.class);
+		putAddress = Handles.findSpecialMethodHandle(internalUnsafeClass, "putAddress", void.class, Object.class, long.class, long.class);
+		addressSize = Handles.findSpecialMethodHandle(internalUnsafeClass, "addressSize", int.class);
+		getUncompressedObject = Handles.findSpecialMethodHandle(internalUnsafeClass, "getUncompressedObject", Object.class, long.class);
+		allocateMemory = Handles.findSpecialMethodHandle(internalUnsafeClass, "allocateMemory", long.class, long.class);
+		freeMemory = Handles.findSpecialMethodHandle(internalUnsafeClass, "freeMemory", void.class, long.class);
+
+		defineClass = Handles.findSpecialMethodHandle(internalUnsafeClass, "defineClass", Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
+		allocateInstance = Handles.findSpecialMethodHandle(internalUnsafeClass, "allocateInstance", Object.class, Class.class);
+
+		arrayBaseOffset = Handles.findSpecialMethodHandle(internalUnsafeClass, "arrayBaseOffset", int.class, Class.class);
+		arrayIndexScale = Handles.findSpecialMethodHandle(internalUnsafeClass, "arrayIndexScale", int.class, Class.class);
+
+		putReference = Handles.findSpecialMethodHandle(internalUnsafeClass, "putReference", void.class, Object.class, long.class, Object.class);
+		getReference = Handles.findSpecialMethodHandle(internalUnsafeClass, "getReference", Object.class, Object.class, long.class);
+
+		putByte = Handles.findSpecialMethodHandle(internalUnsafeClass, "putByte", void.class, Object.class, long.class, byte.class);
+		getByte = Handles.findSpecialMethodHandle(internalUnsafeClass, "getByte", byte.class, Object.class, long.class);
+
+		putChar = Handles.findSpecialMethodHandle(internalUnsafeClass, "putChar", void.class, Object.class, long.class, char.class);
+		getChar = Handles.findSpecialMethodHandle(internalUnsafeClass, "getChar", char.class, Object.class, long.class);
+
+		putBoolean = Handles.findSpecialMethodHandle(internalUnsafeClass, "putBoolean", void.class, Object.class, long.class, boolean.class);
+		getBoolean = Handles.findSpecialMethodHandle(internalUnsafeClass, "getBoolean", boolean.class, Object.class, long.class);
+
+		putShort = Handles.findSpecialMethodHandle(internalUnsafeClass, "putShort", void.class, Object.class, long.class, short.class);
+		getShort = Handles.findSpecialMethodHandle(internalUnsafeClass, "getShort", short.class, Object.class, long.class);
+
+		putInt = Handles.findSpecialMethodHandle(internalUnsafeClass, "putInt", void.class, Object.class, long.class, int.class);
+		getInt = Handles.findSpecialMethodHandle(internalUnsafeClass, "getInt", int.class, Object.class, long.class);
+
+		putLong = Handles.findSpecialMethodHandle(internalUnsafeClass, "putLong", void.class, Object.class, long.class, long.class);
+		getLong = Handles.findSpecialMethodHandle(internalUnsafeClass, "getLong", long.class, Object.class, long.class);
+
+		putFloat = Handles.findSpecialMethodHandle(internalUnsafeClass, "putFloat", void.class, Object.class, long.class, float.class);
+		getFloat = Handles.findSpecialMethodHandle(internalUnsafeClass, "getFloat", float.class, Object.class, long.class);
+
+		putDouble = Handles.findSpecialMethodHandle(internalUnsafeClass, "putDouble", void.class, Object.class, long.class, double.class);
+		getDouble = Handles.findSpecialMethodHandle(internalUnsafeClass, "getDouble", double.class, Object.class, long.class);
+
+		ADDRESS_SIZE = addressSize();
+		ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
 	}
 
 	public static final class Invoker {
@@ -114,8 +161,8 @@ public class InternalUnsafe {
 	public static long objectFieldOffset(Field field) {
 		try {
 			return (long) objectFieldOffset$Field.invoke(internalUnsafe, field);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return UNREACHABLE_lONG;
 	}
@@ -123,8 +170,8 @@ public class InternalUnsafe {
 	public static long objectFieldOffset(Class<?> cls, String field_name) {
 		try {
 			return (long) objectFieldOffset$Class$String.invoke(internalUnsafe, cls, field_name);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return UNREACHABLE_lONG;
 	}
@@ -132,8 +179,8 @@ public class InternalUnsafe {
 	public static Object staticFieldBase(Field field) {
 		try {
 			return staticFieldBase.invoke(internalUnsafe, field);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return null;
 	}
@@ -141,8 +188,8 @@ public class InternalUnsafe {
 	public static long staticFieldOffset(Field field) {
 		try {
 			return (long) staticFieldOffset.invoke(internalUnsafe, field);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return UNREACHABLE_lONG;
 	}
@@ -157,10 +204,112 @@ public class InternalUnsafe {
 	public static <T> T allocateInstance(Class<T> cls) {
 		try {
 			return (T) allocateInstance.invoke(internalUnsafe, cls);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return (T) UNREACHABLE_REFERENCE;
+	}
+
+	/**
+	 * 内存地址操作
+	 */
+	public static void putAddress(Object o, long offset, long x) {
+		try {
+			putAddress.invoke(internalUnsafe, o, offset, x);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static long getAddress(Object o, long offset) {
+		try {
+			return (long) getAddress.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_lONG;
+	}
+
+	/**
+	 * 获取字段的内存地址
+	 * 
+	 * @param obj
+	 * @param field
+	 * @return
+	 */
+	public static long getAddress(Object obj, Field field) {
+		if (Modifier.isStatic(field.getModifiers()))
+			return getAddress(staticFieldBase(field), staticFieldOffset(field));
+		else
+			return getAddress(obj, objectFieldOffset(field));
+	}
+
+	/**
+	 * 获取字段的内存地址
+	 * 
+	 * @param obj
+	 * @param field
+	 * @return
+	 */
+	public static long getAddress(Object obj, String field) {
+		Field f = Reflection.getField(obj, field);
+		if (Modifier.isStatic(f.getModifiers()))
+			return getAddress(staticFieldBase(f), staticFieldOffset(f));
+		else
+			return getAddress(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
+	public static int addressSize() {
+		try {
+			return (int) addressSize.invoke(internalUnsafe);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_INT;
+	}
+
+	public static Object getUncompressedObject(Object o, long offset) {
+		try {
+			return getUncompressedObject.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_REFERENCE;
+	}
+
+	public static long allocateMemory(long bytes) {
+		try {
+			return (long) allocateMemory.invoke(internalUnsafe, bytes);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_lONG;
+	}
+
+	public static void freeMemory(long address) {
+		try {
+			freeMemory.invoke(internalUnsafe, address);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static int arrayBaseOffset(Class<?> arrayClass) {
+		try {
+			return (int) arrayBaseOffset.invoke(internalUnsafe, arrayClass);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_INT;
+	}
+
+	public static int arrayIndexScale(Class<?> arrayClass) {
+		try {
+			return (int) arrayIndexScale.invoke(internalUnsafe, arrayClass);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_INT;
 	}
 
 	/**
@@ -173,7 +322,7 @@ public class InternalUnsafe {
 	public static void putReference(Object o, long offset, Object x) {
 		try {
 			putReference.invoke(internalUnsafe, o, offset, x);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -181,33 +330,50 @@ public class InternalUnsafe {
 	public static Object getReference(Object o, long offset) {
 		try {
 			return getReference.invoke(internalUnsafe, o, offset);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return UNREACHABLE_REFERENCE;
 	}
 
-	public static void putLong(Object o, long offset, long x) {
+	public static void putByte(Object o, long offset, byte x) {
 		try {
-			putLong.invoke(internalUnsafe, o, offset, x);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+			putByte.invoke(internalUnsafe, o, offset, x);
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	public static long getLong(Object o, long offset) {
+	public static byte getByte(Object o, long offset) {
 		try {
-			return (long) getLong.invoke(internalUnsafe, o, offset);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+			return (byte) getByte.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return UNREACHABLE_BYTE;
+	}
+
+	public static void putChar(Object o, long offset, char x) {
+		try {
+			putChar.invoke(internalUnsafe, o, offset, x);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static char getChar(Object o, long offset) {
+		try {
+			return (char) getChar.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_CHAR;
 	}
 
 	public static void putBoolean(Object o, long offset, boolean x) {
 		try {
 			putBoolean.invoke(internalUnsafe, o, offset, x);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -215,16 +381,33 @@ public class InternalUnsafe {
 	public static boolean getBoolean(Object o, long offset) {
 		try {
 			return (boolean) getBoolean.invoke(internalUnsafe, o, offset);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return UNREACHABLE_BOOLEAN;
 	}
 
+	public static void putShort(Object o, long offset, short x) {
+		try {
+			putShort.invoke(internalUnsafe, o, offset, x);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static short getShort(Object o, long offset) {
+		try {
+			return (short) getShort.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_SHORT;
+	}
+
 	public static void putInt(Object o, long offset, int x) {
 		try {
 			putInt.invoke(internalUnsafe, o, offset, x);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -232,16 +415,33 @@ public class InternalUnsafe {
 	public static int getInt(Object o, long offset) {
 		try {
 			return (int) getInt.invoke(internalUnsafe, o, offset);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return UNREACHABLE_INT;
 	}
 
+	public static void putLong(Object o, long offset, long x) {
+		try {
+			putLong.invoke(internalUnsafe, o, offset, x);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static long getLong(Object o, long offset) {
+		try {
+			return (long) getLong.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return UNREACHABLE_lONG;
+	}
+
 	public static void putDouble(Object o, long offset, double x) {
 		try {
 			putDouble.invoke(internalUnsafe, o, offset, x);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -249,7 +449,7 @@ public class InternalUnsafe {
 	public static double getDouble(Object o, long offset) {
 		try {
 			return (double) getDouble.invoke(internalUnsafe, o, offset);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return UNREACHABLE_DOUBLE;
@@ -258,7 +458,7 @@ public class InternalUnsafe {
 	public static void putFloat(Object o, long offset, float x) {
 		try {
 			putFloat.invoke(internalUnsafe, o, offset, x);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -266,7 +466,7 @@ public class InternalUnsafe {
 	public static float getFloat(Object o, long offset) {
 		try {
 			return (float) getFloat.invoke(internalUnsafe, o, offset);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return UNREACHABLE_FLOAT;
@@ -458,8 +658,8 @@ public class InternalUnsafe {
 	public static Class<?> defineClass(String name, byte[] b, int off, int len, ClassLoader loader, ProtectionDomain protectionDomain) {
 		try {
 			return (Class<?>) defineClass.invoke(internalUnsafe, name, b, off, len, loader, protectionDomain);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
 		}
 		return null;
 	}

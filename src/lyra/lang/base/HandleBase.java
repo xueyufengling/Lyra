@@ -26,6 +26,7 @@ public class HandleBase {
 
 	static {
 		TRUSTED_LOOKUP = allocateTrustedLookup();
+		ReflectionBase.cinit();
 	}
 
 	/**

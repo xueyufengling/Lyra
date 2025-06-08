@@ -26,6 +26,8 @@ public abstract class Reflection extends ReflectionBase {
 	private static MethodHandle Class_getConstructor0;
 	private static MethodHandle Class_forName0;
 	private static MethodHandle Reflection_isCallerSensitive;
+	private static MethodHandle Reflection_getCallerClass;
+	private static MethodHandle Method_isCallerSensitive;
 
 	static {
 		try {
@@ -39,10 +41,13 @@ public abstract class Reflection extends ReflectionBase {
 			Class_getConstructor0 = Handles.findSpecialMethodHandle(Class.class, Class.class, "getConstructor0", Constructor.class, Class[].class, int.class);
 			Class_forName0 = Handles.findStaticMethodHandle(Class.class, "forName0", Class.class, String.class, boolean.class, ClassLoader.class, Class.class);
 			Reflection_isCallerSensitive = Handles.findStaticMethodHandle(ReflectionBase.jdk_internal_reflect_Reflection, "isCallerSensitive", boolean.class, Method.class);
+			Reflection_getCallerClass = Handles.findStaticMethodHandle(ReflectionBase.jdk_internal_reflect_Reflection, "getCallerClass", Class.class);
+			Method_isCallerSensitive = Handles.findSpecialMethodHandle(Method.class, "isCallerSensitive", boolean.class);
 		} catch (SecurityException | IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
-		Annotations.enableMirrorAnnotations();
+		System.err.println("cinit Reflection");
+		Annotations.enableIntrinsicAnnotations();
 	}
 
 	public static Field setAccessible(Class<?> cls, String field_name, boolean accessible) {
@@ -506,5 +511,37 @@ public abstract class Reflection extends ReflectionBase {
 			ex.printStackTrace();
 		}
 		return false;
+	}
+
+	/**
+	 * Method.isCallerSensitive()为实际使用的缓存
+	 * 
+	 * @param m
+	 * @return
+	 */
+	public static final boolean methodIsCallerSensitive(Method m) {
+		try {
+			return (boolean) Method_isCallerSensitive.invokeExact(m);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return false;
+	}
+
+	/**
+	 * jdk.internal.reflect.Reflection.getCallerClass()<br>
+	 * 调用该方法的方法必须在C++层的constMethod对象中的is_caller_sensitive()标志位为true。<br>
+	 * 此方法会直接在C++层面检查栈帧，该函数栈帧从0开始计数，除去忽略的栈帧，计数为1的栈帧方法的caller_sensitive标志必须为true，否则抛出错误。<br>
+	 * 
+	 * @return
+	 */
+	@CallerSensitive
+	public static Class<?> getCallerClass() {
+		try {
+			return (Class<?>) Reflection_getCallerClass.invokeExact();
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return null;
 	}
 }
