@@ -11,9 +11,9 @@ import java.util.List;
 import lyra.filesystem.Packages;
 import lyra.filesystem.UriPath;
 import lyra.lang.Handles;
-import lyra.lang.InternalUnsafe;
 import lyra.lang.JavaLang;
 import lyra.lang.Reflection;
+import lyra.lang.base.HandleBase;
 import lyra.lang.base.ReflectionBase;
 import lyra.object.ObjectManipulator;
 
@@ -231,7 +231,7 @@ public class KlassLoader {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return (Class<?>) InternalUnsafe.UNREACHABLE_REFERENCE;
+		return (Class<?>) HandleBase.UNREACHABLE_REFERENCE;
 	}
 
 	/**
@@ -304,7 +304,7 @@ public class KlassLoader {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return (Class<?>) InternalUnsafe.UNREACHABLE_REFERENCE;
+		return (Class<?>) HandleBase.UNREACHABLE_REFERENCE;
 	}
 
 	public static ClassLoader getCallerClassLoader() {

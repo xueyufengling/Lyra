@@ -31,11 +31,15 @@ public class memory {
 		InternalUnsafe.freeMemory(ptr.address());
 	}
 
-	public static final void memset(pointer ptr, byte value, long bytes) {
-		InternalUnsafe.setMemory(null, ptr.address(), bytes, value);
+	public static final void memset(pointer ptr, int value, long bytes) {
+		InternalUnsafe.setMemory(null, ptr.address(), bytes, (byte) value);
 	}
 
 	public static void memcpy(pointer ptrDest, pointer ptrSrc, long bytes) {
 		InternalUnsafe.copyMemory(null, ptrSrc.address(), null, ptrDest.address(), bytes);
+	}
+
+	static void memcpy(long addrDest, long addrSrc, long bytes) {
+		InternalUnsafe.copyMemory(null, addrSrc, null, addrDest, bytes);
 	}
 }

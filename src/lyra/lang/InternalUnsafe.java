@@ -62,16 +62,6 @@ public final class InternalUnsafe {
 
 	public static final long INVALID_FIELD_OFFSET = -1;
 
-	public static final byte UNREACHABLE_BYTE = -1;
-	public static final char UNREACHABLE_CHAR = 0;
-	public static final short UNREACHABLE_SHORT = -1;
-	public static final long UNREACHABLE_lONG = -1;
-	public static final Object UNREACHABLE_REFERENCE = null;
-	public static final boolean UNREACHABLE_BOOLEAN = false;
-	public static final int UNREACHABLE_INT = -1;
-	public static final double UNREACHABLE_DOUBLE = -1;
-	public static final float UNREACHABLE_FLOAT = -1;
-
 	public static final int ADDRESS_SIZE;
 	public static final int ARRAY_OBJECT_BASE_OFFSET;
 
@@ -86,6 +76,7 @@ public final class InternalUnsafe {
 		}
 		if (internalUnsafe == null)
 			System.err.println("Get jdk.internal.misc.Unsafe instance failed! Lyra library will be broken.");
+
 		objectFieldOffset$Field = Handles.findSpecialMethodHandle(internalUnsafeClass, "objectFieldOffset", long.class, Field.class);
 		objectFieldOffset$Class$String = Handles.findSpecialMethodHandle(internalUnsafeClass, "objectFieldOffset", long.class, Class.class, String.class);
 		staticFieldBase = Handles.findSpecialMethodHandle(internalUnsafeClass, "staticFieldBase", Object.class, Field.class);
@@ -168,7 +159,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_lONG;
 	}
 
 	public static long objectFieldOffset(Class<?> cls, String field_name) {
@@ -177,7 +168,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_lONG;
 	}
 
 	public static Object staticFieldBase(Field field) {
@@ -195,7 +186,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_lONG;
 	}
 
 	/**
@@ -211,7 +202,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return (T) UNREACHABLE_REFERENCE;
+		return (T) HandleBase.UNREACHABLE_REFERENCE;
 	}
 
 	/**
@@ -231,7 +222,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_lONG;
 	}
 
 	/**
@@ -269,7 +260,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_INT;
+		return HandleBase.UNREACHABLE_INT;
 	}
 
 	public static Object getUncompressedObject(Object o, long offset) {
@@ -278,7 +269,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_REFERENCE;
+		return HandleBase.UNREACHABLE_REFERENCE;
 	}
 
 	public static long allocateMemory(long bytes) {
@@ -287,7 +278,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_lONG;
 	}
 
 	public static void freeMemory(long address) {
@@ -320,7 +311,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_INT;
+		return HandleBase.UNREACHABLE_INT;
 	}
 
 	public static int arrayIndexScale(Class<?> arrayClass) {
@@ -329,7 +320,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_INT;
+		return HandleBase.UNREACHABLE_INT;
 	}
 
 	/**
@@ -353,7 +344,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_REFERENCE;
+		return HandleBase.UNREACHABLE_REFERENCE;
 	}
 
 	public static void putByte(Object o, long offset, byte x) {
@@ -370,7 +361,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_BYTE;
+		return HandleBase.UNREACHABLE_BYTE;
 	}
 
 	public static void putChar(Object o, long offset, char x) {
@@ -387,7 +378,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_CHAR;
+		return HandleBase.UNREACHABLE_CHAR;
 	}
 
 	public static void putBoolean(Object o, long offset, boolean x) {
@@ -404,7 +395,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_BOOLEAN;
+		return HandleBase.UNREACHABLE_BOOLEAN;
 	}
 
 	public static void putShort(Object o, long offset, short x) {
@@ -421,7 +412,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_SHORT;
+		return HandleBase.UNREACHABLE_SHORT;
 	}
 
 	public static void putInt(Object o, long offset, int x) {
@@ -438,7 +429,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_INT;
+		return HandleBase.UNREACHABLE_INT;
 	}
 
 	public static void putLong(Object o, long offset, long x) {
@@ -455,7 +446,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_lONG;
 	}
 
 	public static void putDouble(Object o, long offset, double x) {
@@ -472,7 +463,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_DOUBLE;
+		return HandleBase.UNREACHABLE_DOUBLE;
 	}
 
 	public static void putFloat(Object o, long offset, float x) {
@@ -489,7 +480,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return UNREACHABLE_FLOAT;
+		return HandleBase.UNREACHABLE_FLOAT;
 	}
 
 	/**

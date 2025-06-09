@@ -289,4 +289,15 @@ public class markWord {
 		}
 		return false;
 	}
+
+	public static final boolean set_klass_word(long obj_base, long klassWord) {
+		if (KLASS_WORD_LENGTH == 32) {
+			InternalUnsafe.putInt(null, obj_base + KLASS_WORD_BYTE_OFFSET, (int) klassWord);
+			return true;
+		} else if (KLASS_WORD_LENGTH == 64) {
+			InternalUnsafe.putLong(null, obj_base + KLASS_WORD_BYTE_OFFSET, klassWord);
+			return true;
+		}
+		return false;
+	}
 }

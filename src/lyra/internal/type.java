@@ -1,6 +1,10 @@
 package lyra.internal;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 import lyra.lang.InternalUnsafe;
+import lyra.lang.Reflection;
 
 /**
  * 类型所占字节数
@@ -75,5 +79,34 @@ public final class type {
 
 	public static final double double_value(Object d) {
 		return ((Number) d).doubleValue();
+	}
+
+	/**
+	 * Java对象所占用内存的大小
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public static final long sizeof_object(Class<?> type) {
+		long max_offset = 0;
+		Class<?> max_offset_field_type = null;
+		Field[] fields = Reflection.getDeclaredFields(type);
+		for (Field f : fields) {
+			if (!Modifier.isStatic(f.getModifiers())) {
+				Class<?> field_type = f.getType();
+				long current_field_offset = InternalUnsafe.objectFieldOffset(f);
+				if (max_offset < current_field_offset) {
+					max_offset = current_field_offset;
+					max_offset_field_type = field_type;
+				}
+			}
+		}
+		return max_offset + sizeof(max_offset_field_type);
+	}
+
+	public static final long padding(int size) {
+		if (size % 8 != 0)// 对象所占字节数必须是8的整数倍，如果不到则需要padding
+			size = (size / 8 + 1) * 8;
+		return size;
 	}
 }

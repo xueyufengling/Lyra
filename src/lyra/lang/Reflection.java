@@ -8,7 +8,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import lyra.lang.annotation.Annotations;
 import lyra.lang.annotation.CallerSensitive;
 import lyra.lang.base.ReflectionBase;
 
@@ -46,7 +45,6 @@ public abstract class Reflection extends ReflectionBase {
 		} catch (SecurityException | IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
-		Annotations.enableIntrinsicAnnotations();
 	}
 
 	public static Field setAccessible(Class<?> cls, String field_name, boolean accessible) {
