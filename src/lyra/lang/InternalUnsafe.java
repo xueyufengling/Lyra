@@ -26,6 +26,7 @@ public final class InternalUnsafe {
 	private static MethodHandle freeMemory;
 	private static MethodHandle setMemory;
 	private static MethodHandle copyMemory;
+	private static MethodHandle copyMemory0;
 
 	private static MethodHandle defineClass;
 	private static MethodHandle allocateInstance;
@@ -90,6 +91,7 @@ public final class InternalUnsafe {
 		freeMemory = Handles.findSpecialMethodHandle(internalUnsafeClass, "freeMemory", void.class, long.class);
 		setMemory = Handles.findSpecialMethodHandle(internalUnsafeClass, "setMemory", void.class, Object.class, long.class, long.class, byte.class);
 		copyMemory = Handles.findSpecialMethodHandle(internalUnsafeClass, "copyMemory", void.class, Object.class, long.class, Object.class, long.class, long.class);
+		copyMemory0 = Handles.findSpecialMethodHandle(internalUnsafeClass, "copyMemory0", void.class, Object.class, long.class, Object.class, long.class, long.class);
 
 		defineClass = Handles.findSpecialMethodHandle(internalUnsafeClass, "defineClass", Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class);
 		allocateInstance = Handles.findSpecialMethodHandle(internalUnsafeClass, "allocateInstance", Object.class, Class.class);
@@ -300,6 +302,14 @@ public final class InternalUnsafe {
 	public static void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
 		try {
 			copyMemory.invoke(internalUnsafe, srcBase, srcOffset, destBase, destOffset, bytes);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static void copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes) {
+		try {
+			copyMemory0.invoke(internalUnsafe, srcBase, srcOffset, destBase, destOffset, bytes);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}

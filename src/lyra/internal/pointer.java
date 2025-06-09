@@ -9,8 +9,8 @@ import lyra.lang.Reflection;
 
 /**
  * C++指针，实际上是JVM使用的相对内存地址<br>
- * 不要用于取对象地址，对象会随着GC过程移动，地址会失效。<br>
- * 主要配合memory使用，对分配的内存进行操作。
+ * 不要用于取对象地址，短时间内可能不会出问题，但对象会随着GC过程移动，原先的地址会失效。<br>
+ * 主要配合memory使用，对分配的固定地址内存进行操作。
  */
 public class pointer {
 	/**
@@ -234,15 +234,15 @@ public class pointer {
 
 	/**
 	 * 获取对象的地址，返回long<br>
-	 * 利用Object[]的元素为oop指针的事实来间接取指针。<br>
+	 * 利用Object[]的元素为oop指针的事实来间接取地址，该地址为JVM内部相对地址，不一定是实际的绝对地址。该地址可直接用于InternalUnsafe的相关方法<br>
 	 * 在32位和未启用UseCompressedOops的64位JVM上，取的地址直接就是绝对地址。<br>
-	 * 在开启UseCompressedOops的64位JVM上，取的地址是相对偏移量，需要除以8（字节对其）或者右移3位+相对偏移量为0的基地址（即nullptr的绝对地址）才是绝对地址。
+	 * 在开启UseCompressedOops的64位JVM上，取的地址是相对偏移量，需要乘以字节对齐量（字节对齐默认为8）或者左移（3位）+相对偏移量为0的基地址（即nullptr的绝对地址）才是绝对地址。
 	 * 
 	 * @param jobject
 	 * @return
 	 */
 	static final long address_of_object(Object jobject) {
-		return InternalUnsafe.getInt(new Object[] { jobject }, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET);
+		return InternalUnsafe.getAddress(new Object[] { jobject }, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET);
 	}
 
 	/**
@@ -279,7 +279,7 @@ public class pointer {
 	 */
 	static final Object dereference_object(long addr) {
 		Object[] __ref_fetch = new Object[1];
-		InternalUnsafe.putInt(__ref_fetch, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET, (int) addr);
+		InternalUnsafe.putAddress(__ref_fetch, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET, addr);
 		return __ref_fetch[0];
 	}
 
@@ -316,7 +316,7 @@ public class pointer {
 	}
 
 	/**
-	 * 设置指针指向的地址的值
+	 * 设置指针指向的地址的值，如果是对象则拷贝对象的字段，对象头保持不动。
 	 * 
 	 * @param v
 	 * @return 返回指针本身
@@ -342,7 +342,7 @@ public class pointer {
 		else if (ptr_type == double.class)
 			InternalUnsafe.putDouble(null, addr, type.double_value(v));
 		else
-			InternalUnsafe.putAddress(null, addr, address_of_object(v));
+			InternalUnsafe.copyMemory0(v, markWord.HEADER_BYTE_LENGTH, dereference(), markWord.HEADER_BYTE_LENGTH, type.sizeof_object(v.getClass()) - markWord.HEADER_BYTE_LENGTH);// 只拷贝字段，不覆盖对象头
 		return this;
 	}
 }

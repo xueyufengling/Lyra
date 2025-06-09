@@ -82,7 +82,7 @@ public final class type {
 	}
 
 	/**
-	 * Java对象所占用内存的大小
+	 * Java对象所占用内存的大小，无对齐大小。
 	 * 
 	 * @param type
 	 * @return
@@ -104,6 +104,12 @@ public final class type {
 		return max_offset + sizeof(max_offset_field_type);
 	}
 
+	/**
+	 * 对齐的大小
+	 * 
+	 * @param size
+	 * @return
+	 */
 	public static final long padding(int size) {
 		if (size % 8 != 0)// 对象所占字节数必须是8的整数倍，如果不到则需要padding
 			size = (size / 8 + 1) * 8;
