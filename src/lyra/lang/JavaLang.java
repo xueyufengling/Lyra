@@ -1,7 +1,6 @@
 package lyra.lang;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
 
 import lyra.object.ObjectManipulator;
 
@@ -27,7 +26,7 @@ public class JavaLang {
 
 	private static Class<?> SharedSecrets;// jdk.internal.access.SharedSecrets
 	private static Object JavaLangAccess;// jdk.internal.access.JavaLangAccess;
-	private static Method getConstantPool;// 获取指定类的类常量池The ConstantPool，其中包含静态成员、方法列表等
+	private static MethodHandle getConstantPool;// 获取指定类的类常量池The ConstantPool，其中包含静态成员、方法列表等
 
 	public static final StackWalker stackWalker;
 
@@ -35,15 +34,17 @@ public class JavaLang {
 		stackWalker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);// 最常用，最先初始化
 		try {
 			SharedSecrets = Class.forName("jdk.internal.access.SharedSecrets");
+			Class<?> ConstantPool = Class.forName("jdk.internal.reflect.ConstantPool");
 			JavaLangAccess = getAccess("JavaLangAccess");
-			getConstantPool = ObjectManipulator.removeAccessCheck(JavaLangAccess.getClass().getDeclaredMethod("getConstantPool", Class.class));
-		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+			getConstantPool = Handles.findSpecialMethodHandle(JavaLangAccess.getClass(), "getConstantPool", ConstantPool, Class.class);
+		} catch (ClassNotFoundException | SecurityException ex) {
 			ex.printStackTrace();
 		}
 	}
 
 	/**
-	 * 获取jdk.internal.access.SharedSecrets中的访问对象
+	 * 获取jdk.internal.access.SharedSecrets中的访问对象。<br>
+	 * 无法确定返回类型，因此只能使用反射，不能使用MethodHandle。<br>
 	 * 
 	 * @param access_name 访问对象的类名，不包含包名
 	 * @return 访问对象
@@ -60,8 +61,8 @@ public class JavaLang {
 	 */
 	public static Object getConstantPool(Class<?> clazz) {
 		try {
-			return getConstantPool.invoke(JavaLangAccess, clazz);
-		} catch (IllegalAccessException | InvocationTargetException ex) {
+			return getConstantPool.invokeExact(JavaLangAccess, clazz);
+		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return null;

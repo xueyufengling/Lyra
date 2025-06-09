@@ -1,8 +1,8 @@
 package lyra.klass;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,14 +10,19 @@ import java.util.List;
 
 import lyra.filesystem.Packages;
 import lyra.filesystem.UriPath;
+import lyra.lang.Handles;
+import lyra.lang.InternalUnsafe;
 import lyra.lang.JavaLang;
 import lyra.lang.Reflection;
 import lyra.lang.base.ReflectionBase;
 import lyra.object.ObjectManipulator;
 
 public class KlassLoader {
-	private static Method ClassLoader_m_defineClass;
-	private static Method ClassLoader_m_findClass;
+	private static MethodHandle ClassLoader_m_defineClass;
+	private static MethodHandle ClassLoader_m_findClass;
+	/**
+	 * final字段只能使用Unsafe更改，不可使用VarHandle。
+	 */
 	private static Field ClassLoader_f_parent;
 	private static Field Class_f_classLoader;
 
@@ -25,8 +30,8 @@ public class KlassLoader {
 
 	static {
 		ReflectionBase.noReflectionFieldFilter(() -> {
-			ClassLoader_m_defineClass = Reflection.getMethod(ClassLoader.class, "defineClass", new Class<?>[] { String.class, byte[].class, int.class, int.class, ProtectionDomain.class });
-			ClassLoader_m_findClass = Reflection.getMethod(ClassLoader.class, "findClass", new Class<?>[] { String.class });
+			ClassLoader_m_defineClass = Handles.findSpecialMethodHandle(ClassLoader.class, "defineClass", Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class);
+			ClassLoader_m_findClass = Handles.findSpecialMethodHandle(ClassLoader.class, "findClass", Class.class, String.class);
 			ClassLoader_f_parent = Reflection.getField(ClassLoader.class, "parent");
 			Class_f_classLoader = Reflection.getField(Class.class, "classLoader");
 		});
@@ -221,7 +226,12 @@ public class KlassLoader {
 	 * @throws ClassFormatError
 	 */
 	public static final Class<?> defineClass(ClassLoader loader, String name, byte[] b, int off, int len, ProtectionDomain protectionDomain) throws ClassFormatError {
-		return (Class<?>) ObjectManipulator.invoke(loader, ClassLoader_m_defineClass, name, b, off, len, protectionDomain);
+		try {
+			return (Class<?>) ClassLoader_m_defineClass.invokeExact(loader, name, b, off, len, protectionDomain);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return (Class<?>) InternalUnsafe.UNREACHABLE_REFERENCE;
 	}
 
 	/**
@@ -252,7 +262,7 @@ public class KlassLoader {
 	 * @throws ClassFormatError
 	 */
 	public static final Class<?> defineClass(ClassLoader loader, String name, byte[] b, int off, int len) throws ClassFormatError {
-		return (Class<?>) ObjectManipulator.invoke(loader, ClassLoader_m_defineClass, name, b, off, len, null);
+		return defineClass(loader, name, b, off, len, null);
 	}
 
 	public static final Class<?> defineClass(ClassLoader loader, String name, byte[] b) throws ClassFormatError {
@@ -289,7 +299,12 @@ public class KlassLoader {
 	 * @throws ClassFormatError
 	 */
 	public static final Class<?> findClass(ClassLoader loader, String name) throws ClassNotFoundException {
-		return (Class<?>) ObjectManipulator.invoke(loader, ClassLoader_m_findClass, name);
+		try {
+			return (Class<?>) ClassLoader_m_findClass.invokeExact(loader, name);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return (Class<?>) InternalUnsafe.UNREACHABLE_REFERENCE;
 	}
 
 	public static ClassLoader getCallerClassLoader() {

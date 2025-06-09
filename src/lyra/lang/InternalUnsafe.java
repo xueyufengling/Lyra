@@ -60,15 +60,15 @@ public final class InternalUnsafe {
 
 	public static final long INVALID_FIELD_OFFSET = -1;
 
-	private static final byte UNREACHABLE_BYTE = -1;
-	private static final char UNREACHABLE_CHAR = 0;
-	private static final short UNREACHABLE_SHORT = -1;
-	private static final long UNREACHABLE_lONG = -1;
-	private static final Object UNREACHABLE_REFERENCE = null;
-	private static final boolean UNREACHABLE_BOOLEAN = false;
-	private static final int UNREACHABLE_INT = -1;
-	private static final double UNREACHABLE_DOUBLE = -1;
-	private static final float UNREACHABLE_FLOAT = -1;
+	public static final byte UNREACHABLE_BYTE = -1;
+	public static final char UNREACHABLE_CHAR = 0;
+	public static final short UNREACHABLE_SHORT = -1;
+	public static final long UNREACHABLE_lONG = -1;
+	public static final Object UNREACHABLE_REFERENCE = null;
+	public static final boolean UNREACHABLE_BOOLEAN = false;
+	public static final int UNREACHABLE_INT = -1;
+	public static final double UNREACHABLE_DOUBLE = -1;
+	public static final float UNREACHABLE_FLOAT = -1;
 
 	public static final int ADDRESS_SIZE;
 	public static final int ARRAY_OBJECT_BASE_OFFSET;
