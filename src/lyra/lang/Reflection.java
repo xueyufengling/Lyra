@@ -46,7 +46,6 @@ public abstract class Reflection extends ReflectionBase {
 		} catch (SecurityException | IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
-		System.err.println("cinit Reflection");
 		Annotations.enableIntrinsicAnnotations();
 	}
 
@@ -67,6 +66,7 @@ public abstract class Reflection extends ReflectionBase {
 		try {
 			return (Field[]) Class_getDeclaredFields0.invokeExact(clazz, publicOnly);
 		} catch (Throwable ex) {
+			System.err.println("Reflection.getDeclaredFields0(" + clazz + ", " + publicOnly + ") failed.");
 			ex.printStackTrace();
 		}
 		return null;
@@ -80,6 +80,7 @@ public abstract class Reflection extends ReflectionBase {
 		try {
 			return (Field) Class_searchFields.invokeExact(getDeclaredFields0(clazz), field_name);
 		} catch (Throwable ex) {
+			System.err.println("Reflection.getDeclaredField0(" + clazz + ", " + field_name + ") failed.");
 			ex.printStackTrace();
 		}
 		return null;
@@ -89,19 +90,21 @@ public abstract class Reflection extends ReflectionBase {
 		try {
 			return (Field[]) Class_privateGetDeclaredFields.invokeExact(clazz, publicOnly);
 		} catch (Throwable ex) {
+			System.err.println("Reflection.getDeclaredFields(" + clazz + ", " + publicOnly + ") failed.");
 			ex.printStackTrace();
 		}
 		return null;
 	}
 
 	public static Field[] getDeclaredFields(Class<?> clazz) {
-		return getDeclaredFields0(clazz, false);
+		return getDeclaredFields(clazz, false);
 	}
 
 	public static Field getDeclaredField(Class<?> clazz, String field_name) {
 		try {
 			return (Field) Class_searchFields.invokeExact(getDeclaredFields(clazz), field_name);
 		} catch (Throwable ex) {
+			System.err.println("Reflection.getDeclaredField(" + clazz + ", " + field_name + ") failed.");
 			ex.printStackTrace();
 		}
 		return null;

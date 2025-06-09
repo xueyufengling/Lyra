@@ -11,6 +11,9 @@ import lyra.lang.Reflection;
  * C++指针，实际上是JVM使用的相对内存地址
  */
 public class pointer {
+	/**
+	 * C++层的指针转换为(void*)(uint64_t)addr
+	 */
 	private long addr;
 	private Class<?> ptr_type;
 
