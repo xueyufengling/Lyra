@@ -1,6 +1,7 @@
 package lyra.internal;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Objects;
 
 import lyra.internal.oops.markWord;
@@ -16,13 +17,13 @@ public class pointer {
 	/**
 	 * C++层的指针转换为(void*)(uint64_t)addr
 	 */
-	private long addr;
-	private Class<?> ptr_type;
+	long addr;
+	Class<?> ptr_type;
 
 	/**
 	 * 指针算术运算的步长，与类型有关，以byte为单位
 	 */
-	private long stride;
+	long stride;
 
 	/**
 	 * 缓存指针类型的klass word，每次cast()的时候更新值
@@ -117,7 +118,7 @@ public class pointer {
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(addr) ^ Objects.hashCode(ptr_type);
+		return Objects.hashCode(addr) ^ Objects.hashCode(ptr_type) ^ Objects.hashCode(ptr_type);
 	}
 
 	/**
@@ -257,6 +258,16 @@ public class pointer {
 	}
 
 	/**
+	 * 将引用转换为指针
+	 * 
+	 * @param ref
+	 * @return
+	 */
+	public static final pointer address_of(reference ref) {
+		return pointer.at(ref.address_of_reference(), ref.ref_type);
+	}
+
+	/**
 	 * 因为基本类型都是by value传递参数入栈，取地址没意义，因此只能取类的字段地址
 	 * 
 	 * @param jobject
@@ -264,7 +275,10 @@ public class pointer {
 	 * @return
 	 */
 	public static final pointer address_of(Object jobject, Field field) {
-		return pointer.at(InternalUnsafe.getAddress(jobject, field), field.getType());
+		if (Modifier.isStatic(field.getModifiers()))// 静态字段
+			return pointer.at(address_of_object(InternalUnsafe.staticFieldBase(field)) + InternalUnsafe.staticFieldOffset(field), field.getType());
+		else
+			return pointer.at(address_of_object(jobject) + InternalUnsafe.objectFieldOffset(field), field.getType());
 	}
 
 	public static final pointer address_of(Object jobject, String field) {

@@ -4,7 +4,7 @@ import java.nio.ByteOrder;
 
 import lyra.lang.InternalUnsafe;
 
-public class memory {
+public abstract class memory {
 
 	/**
 	 * 字节序

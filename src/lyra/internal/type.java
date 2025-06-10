@@ -9,7 +9,7 @@ import lyra.lang.Reflection;
 /**
  * 类型所占字节数
  */
-public final class type {
+public abstract class type {
 	public static final long object_reference_size;
 
 	static {
