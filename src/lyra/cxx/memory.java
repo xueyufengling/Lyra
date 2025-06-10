@@ -1,4 +1,4 @@
-package lyra.internal;
+package lyra.cxx;
 
 import java.nio.ByteOrder;
 
@@ -24,7 +24,7 @@ public abstract class memory {
 	}
 
 	public static final pointer malloc(long size, Class<?> type_cls) {
-		return pointer.at(InternalUnsafe.allocateMemory(size * type.sizeof(type_cls)), type_cls);
+		return pointer.at(InternalUnsafe.allocateMemory(size * jtype.sizeof(type_cls)), type_cls);
 	}
 
 	public static final void free(pointer ptr) {

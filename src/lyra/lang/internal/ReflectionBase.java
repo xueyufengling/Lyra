@@ -1,4 +1,4 @@
-package lyra.lang.base;
+package lyra.lang.internal;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.AccessibleObject;

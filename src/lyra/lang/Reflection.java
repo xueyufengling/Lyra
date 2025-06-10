@@ -6,10 +6,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 import lyra.lang.annotation.CallerSensitive;
-import lyra.lang.base.ReflectionBase;
+import lyra.lang.internal.ReflectionBase;
 
 /**
  * 反射工具，大部分功能可以直接使用Manipulator调用
@@ -163,6 +164,19 @@ public abstract class Reflection extends ReflectionBase {
 			ex.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * 目标方法是否是静态的。该方法主要用于MethodHandle查找。
+	 * 
+	 * @param clazz
+	 * @param method_name
+	 * @param arg_types
+	 * @return
+	 */
+	public static boolean isStatic(Class<?> clazz, String method_name, Class<?>... arg_types) {
+		Method m = Reflection.getDeclaredMethod(clazz, method_name, arg_types);
+		return Modifier.isStatic(m.getModifiers());
 	}
 
 	public static <T> Constructor<T>[] getDeclaredConstructors(Class<?> clazz, boolean publicOnly) {

@@ -1,4 +1,4 @@
-package lyra.internal;
+package lyra.cxx;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -7,9 +7,9 @@ import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
 
 /**
- * 类型所占字节数
+ * Java类型所占字节数
  */
-public abstract class type {
+public abstract class jtype {
 	public static final long object_reference_size;
 
 	static {

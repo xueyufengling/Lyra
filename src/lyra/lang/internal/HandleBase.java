@@ -1,4 +1,4 @@
-package lyra.lang.base;
+package lyra.lang.internal;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -36,7 +36,7 @@ public class HandleBase {
 	public static final byte UNREACHABLE_BYTE = -1;
 	public static final char UNREACHABLE_CHAR = 0;
 	public static final short UNREACHABLE_SHORT = -1;
-	public static final long UNREACHABLE_lONG = -1;
+	public static final long UNREACHABLE_LONG = -1;
 	public static final Object UNREACHABLE_REFERENCE = null;
 	public static final boolean UNREACHABLE_BOOLEAN = false;
 	public static final int UNREACHABLE_INT = -1;
@@ -78,14 +78,25 @@ public class HandleBase {
 	 * 
 	 * @param clazz
 	 * @param field_name
-	 * @param type
+	 * @param jtype
 	 * @return
 	 */
-	public static MethodHandle internalFindConstructor(Class<?> clazz, Class<?>... arg_types) {
+	public static MethodHandle findConstructor(Class<?> clazz, Class<?>... arg_types) {
 		MethodHandles.Lookup lookup;
 		try {
 			lookup = MethodHandles.privateLookupIn(clazz, TRUSTED_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
 			return lookup.findConstructor(clazz, MethodType.methodType(void.class, arg_types));
+		} catch (IllegalAccessException | NoSuchMethodException ex) {
+			ex.printStackTrace();
+		}
+		return (MethodHandle) UNREACHABLE_REFERENCE;
+	}
+
+	public static MethodHandle findInitializer(Class<?> clazz) {
+		MethodHandles.Lookup lookup;
+		try {
+			lookup = MethodHandles.privateLookupIn(clazz, TRUSTED_LOOKUP); // 获取该类所有的字节码行为的Lookup，即无视访问权限查找
+			return lookup.findStatic(clazz, MemberName.INITIALIZER_NAME, MethodType.methodType(void.class, new Class<?>[0]));
 		} catch (IllegalAccessException | NoSuchMethodException ex) {
 			ex.printStackTrace();
 		}

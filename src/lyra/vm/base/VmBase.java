@@ -13,6 +13,7 @@ public abstract class VmBase {
 	public static final int ObjectAlignmentInBytes;// 对象字节对齐，默认为8,必须是2的幂
 
 	public static final int NATIVE_JVM_BIT_VERSION;// 64或32
+	public static final boolean ON_64_BIT_JVM;// 是否运行在64位JVM，该变量为缓存值，用于指针的快速条件判断
 	public static final boolean NATIVE_JVM_HOTSPOT;// JVM是否是HotSpot，如果是才能获取JVM参数进而判断指针是否压缩
 	public static final int NATIVE_ADDRESS_SHIFT;// 64位JVM开启UseCompressedOops的情况下，oop被压缩，指向的地址有按位偏移。NATIVE_ADDRESS_SHIFT=log2(ObjectAlignmentInBytes)
 
@@ -32,6 +33,10 @@ public abstract class VmBase {
 			else
 				NATIVE_JVM_BIT_VERSION = 32;
 		}
+		if (NATIVE_JVM_BIT_VERSION == 64)
+			ON_64_BIT_JVM = true;
+		else
+			ON_64_BIT_JVM = false;
 		boolean hotspot = false;
 		boolean compressed_oops = false;
 		int align_bytes = 8;

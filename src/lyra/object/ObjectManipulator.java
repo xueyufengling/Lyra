@@ -8,8 +8,7 @@ import java.lang.reflect.Method;
 import lyra.internal.oops.markWord;
 import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
-import lyra.lang.base.ReflectionBase;
-import lyra.ntv.Oops;
+import lyra.lang.internal.ReflectionBase;
 
 /**
  * 核心的类成员修改、访问和方法调用类，支持修改final、record成员变量。<br>
@@ -216,11 +215,11 @@ public abstract class ObjectManipulator {
 	}
 
 	public static final Object cast(Object obj, Class<?> castType) {
-		return cast(obj, Oops.klassWord(castType));
+		return cast(obj, markWord.get_klass_word(castType));
 	}
 
 	public static final Object cast(Object obj, String castType) {
-		return cast(obj, Oops.klassWord(castType));
+		return cast(obj, markWord.get_klass_word(castType));
 	}
 
 	@SuppressWarnings("unchecked")

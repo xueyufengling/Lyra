@@ -1,4 +1,4 @@
-package lyra.lang.base;
+package lyra.lang.internal;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -6,6 +6,7 @@ import java.lang.invoke.VarHandle;
 import java.lang.invoke.MethodHandles.Lookup;
 
 import lyra.lang.Handles;
+import lyra.lang.InternalUnsafe;
 import lyra.object.ObjectManipulator;
 
 /**
@@ -29,22 +30,23 @@ public class MemberName {
 	private static MethodHandle isVarargs;
 	private static MethodHandle isSynthetic;
 
-	static final String CONSTRUCTOR_NAME; // the ever-popular
+	public static final String INITIALIZER_NAME = "<cinit>";
+	public static final String CONSTRUCTOR_NAME; // the ever-popular
 
 	// modifiers exported by the JVM:
-	static final int RECOGNIZED_MODIFIERS;
+	public static final int RECOGNIZED_MODIFIERS;
 
 	// private flags, not part of RECOGNIZED_MODIFIERS:
-	static final int IS_METHOD, // method (not constructor)
+	public static final int IS_METHOD, // method (not constructor)
 			IS_CONSTRUCTOR, // constructor
 			IS_FIELD, // field
 			IS_TYPE, // nested type
 			CALLER_SENSITIVE, // @CallerSensitive annotation detected
 			TRUSTED_FINAL; // trusted final field
 
-	static final int ALL_ACCESS;
-	static final int ALL_KINDS;
-	static final int IS_INVOCABLE;
+	public static final int ALL_ACCESS;
+	public static final int ALL_KINDS;
+	public static final int IS_INVOCABLE;
 
 	private static MethodHandle isInvocable;
 	private static MethodHandle isMethod;
@@ -56,12 +58,14 @@ public class MemberName {
 	private static MethodHandle isTrustedFinalField;
 
 	static Class<?> java_lang_invoke_MemberName;
-	static Class<?> java_lang_invoke_DirectMethodHandle_Constructor;
+	static Class<?> java_lang_invoke_DirectMethodHandle;
+	static Class<?> java_lang_invoke_DirectMethodHandle$Constructor;
 
 	static {
 		try {
 			java_lang_invoke_MemberName = Class.forName("java.lang.invoke.MemberName");
-			java_lang_invoke_DirectMethodHandle_Constructor = Class.forName("java.lang.invoke.DirectMethodHandle$Constructor");
+			java_lang_invoke_DirectMethodHandle = Class.forName("java.lang.invoke.DirectMethodHandle");
+			java_lang_invoke_DirectMethodHandle$Constructor = Class.forName("java.lang.invoke.DirectMethodHandle$Constructor");
 
 		} catch (ClassNotFoundException ex) {
 			ex.printStackTrace();
@@ -75,12 +79,12 @@ public class MemberName {
 		CONSTRUCTOR_NAME = (String) ObjectManipulator.access(java_lang_invoke_MemberName, "CONSTRUCTOR_NAME");
 		RECOGNIZED_MODIFIERS = (int) ObjectManipulator.access(java_lang_invoke_MemberName, "RECOGNIZED_MODIFIERS");
 
-		IS_METHOD = MethodHandleNativesConstants.MN_IS_METHOD; // method (not constructor)
-		IS_CONSTRUCTOR = MethodHandleNativesConstants.MN_IS_CONSTRUCTOR; // constructor
-		IS_FIELD = MethodHandleNativesConstants.MN_IS_FIELD; // field
-		IS_TYPE = MethodHandleNativesConstants.MN_IS_TYPE; // nested type
-		CALLER_SENSITIVE = MethodHandleNativesConstants.MN_CALLER_SENSITIVE; // @CallerSensitive annotation detected
-		TRUSTED_FINAL = MethodHandleNativesConstants.MN_TRUSTED_FINAL; // trusted final field
+		IS_METHOD = MethodHandleNatives.Constants.MN_IS_METHOD; // method (not constructor)
+		IS_CONSTRUCTOR = MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR; // constructor
+		IS_FIELD = MethodHandleNatives.Constants.MN_IS_FIELD; // field
+		IS_TYPE = MethodHandleNatives.Constants.MN_IS_TYPE; // nested type
+		CALLER_SENSITIVE = MethodHandleNatives.Constants.MN_CALLER_SENSITIVE; // @CallerSensitive annotation detected
+		TRUSTED_FINAL = MethodHandleNatives.Constants.MN_TRUSTED_FINAL; // trusted final field
 
 		ALL_ACCESS = (int) ObjectManipulator.access(java_lang_invoke_MemberName, "ALL_ACCESS");
 		ALL_KINDS = (int) ObjectManipulator.access(java_lang_invoke_MemberName, "ALL_KINDS");
@@ -233,10 +237,12 @@ public class MemberName {
 	/**
 	 * DirectMethodHandle$Constructor的MemberName对象
 	 */
-	private static VarHandle java_lang_invoke_DirectMethodHandle_Constructor_initMethod;
+	private static VarHandle java_lang_invoke_DirectMethodHandle$Constructor_initMethod;
+	private static VarHandle java_lang_invoke_DirectMethodHandle_member;
 
 	static {
-		java_lang_invoke_DirectMethodHandle_Constructor_initMethod = HandleBase.internalFindVarHandle(java_lang_invoke_DirectMethodHandle_Constructor, "initMethod", java_lang_invoke_MemberName);
+		java_lang_invoke_DirectMethodHandle$Constructor_initMethod = HandleBase.internalFindVarHandle(java_lang_invoke_DirectMethodHandle$Constructor, "initMethod", java_lang_invoke_MemberName);
+		java_lang_invoke_DirectMethodHandle_member = HandleBase.internalFindVarHandle(java_lang_invoke_DirectMethodHandle, "member", java_lang_invoke_MemberName);
 	}
 
 	/**
@@ -246,8 +252,10 @@ public class MemberName {
 	 * @return
 	 */
 	public static final Object memberNameOf(MethodHandle m) {
-		if (java_lang_invoke_DirectMethodHandle_Constructor.isInstance(m))
-			return java_lang_invoke_DirectMethodHandle_Constructor_initMethod.get(m);
+		if (java_lang_invoke_DirectMethodHandle$Constructor.isInstance(m))
+			return java_lang_invoke_DirectMethodHandle$Constructor_initMethod.get(m);
+		else if (java_lang_invoke_DirectMethodHandle.isInstance(m))
+			return java_lang_invoke_DirectMethodHandle_member.get(m);
 		return null;
 	}
 
@@ -318,19 +326,62 @@ public class MemberName {
 		return getDirectMethod(refKind, refc, method, Handles.IMPL_LOOKUP);
 	}
 
+	private static MethodHandle getReferenceKind;
+
+	static {
+		getReferenceKind = Handles.findVirtualMethodHandle(java_lang_invoke_MemberName, "getReferenceKind", byte.class);
+	}
+
 	/**
-	 * 获取一个可以被当作实例方法调用的构造函数。
+	 * 获取指定memberName的调用字节码
 	 * 
-	 * @param target_type
-	 * @param arg_types
+	 * @param memberName
 	 * @return
 	 */
-	public static MethodHandle invokeVirtualConstructor(Class<?> target_type, Class<?>... arg_types) {
-		Object memberName = memberNameOf(HandleBase.internalFindConstructor(target_type, arg_types));
-		int flags = getMemberNameFlags(memberName);
-		flags = setFlag(flags, IS_CONSTRUCTOR, false);// 取消构造函数标志
-		flags = setFlag(flags, IS_METHOD, true);// 添加普通方法标志
-		setMemberNameFlags(memberName, flags);
-		return getDirectMethod(MethodHandleNativesConstants.REF_invokeVirtual, target_type, memberName);
+	public static byte getReferenceKind(Object memberName) {
+		try {
+			return (byte) getReferenceKind.invoke(memberName);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return HandleBase.UNREACHABLE_BYTE;
+	}
+
+	private static MethodHandle init;
+
+	static {
+		init = Handles.findVirtualMethodHandle(java_lang_invoke_MemberName, "init", void.class, Class.class, String.class, Object.class, int.class);
+	}
+
+	/**
+	 * 在一个对象上进行初始化
+	 * 
+	 * @param memberName
+	 * @param defClass
+	 * @param name
+	 * @param type       Class<?>或MethodType
+	 * @param flags
+	 * @return
+	 */
+	public static final Object init(Object memberName, Class<?> defClass, String name, Object type, int flags) {
+		try {
+			return (Object) init.invoke(memberName, defClass, name, flags);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return HandleBase.UNREACHABLE_REFERENCE;
+	}
+
+	/**
+	 * 构建一个字段或方法的名称
+	 * 
+	 * @param defClass
+	 * @param name
+	 * @param type
+	 * @param flags
+	 * @return
+	 */
+	public static final Object allocate(Class<?> defClass, String name, Object type, int flags) {
+		return init(InternalUnsafe.allocateInstance(java_lang_invoke_MemberName), defClass, name, type, flags);
 	}
 }

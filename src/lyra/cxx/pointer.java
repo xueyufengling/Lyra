@@ -1,4 +1,4 @@
-package lyra.internal;
+package lyra.cxx;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -51,7 +51,7 @@ public class pointer {
 	 * 仅拷贝构造指针使用！
 	 * 
 	 * @param addr
-	 * @param type
+	 * @param jtype
 	 * @param stride
 	 * @param ptr_type_klass_word
 	 */
@@ -163,8 +163,8 @@ public class pointer {
 	 */
 	public pointer cast(Class<?> destType) {
 		this.ptr_type = destType;
-		this.stride = type.sizeof(destType);
-		if (!type.is_primitive(destType)) {
+		this.stride = jtype.sizeof(destType);
+		if (!jtype.is_primitive(destType)) {
 			// 每次cast()的时候更新目标对象的类型
 			ptr_type_klass_word = markWord.get_klass_word(destType);
 		}
@@ -230,7 +230,7 @@ public class pointer {
 	}
 
 	static {
-		nullptr = address_of(null);
+		nullptr = pointer.at(address_of_object(null), void_ptr_type);
 	}
 
 	/**
@@ -243,7 +243,7 @@ public class pointer {
 	 * @return
 	 */
 	static final long address_of_object(Object jobject) {
-		return InternalUnsafe.getAddress(new Object[] { jobject }, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET);
+		return InternalUnsafe.fetchNativeAddress(new Object[] { jobject }, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET);
 	}
 
 	/**
@@ -293,7 +293,7 @@ public class pointer {
 	 */
 	static final Object dereference_object(long addr) {
 		Object[] __ref_fetch = new Object[1];
-		InternalUnsafe.putAddress(__ref_fetch, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET, addr);
+		InternalUnsafe.storeNativeAddress(__ref_fetch, InternalUnsafe.ARRAY_OBJECT_BASE_OFFSET, addr);
 		return __ref_fetch[0];
 	}
 
@@ -340,23 +340,23 @@ public class pointer {
 		if (is_void_ptr_type())
 			throw new RuntimeException("Cannot dereference a void* pointer at " + this.toString());
 		if (ptr_type == byte.class)
-			InternalUnsafe.putByte(null, addr, type.byte_value(v));
+			InternalUnsafe.putByte(null, addr, jtype.byte_value(v));
 		else if (ptr_type == char.class)
-			InternalUnsafe.putChar(null, addr, type.char_value(v));
+			InternalUnsafe.putChar(null, addr, jtype.char_value(v));
 		else if (ptr_type == boolean.class)
-			InternalUnsafe.putBoolean(null, addr, type.boolean_value(v));
+			InternalUnsafe.putBoolean(null, addr, jtype.boolean_value(v));
 		else if (ptr_type == short.class)
-			InternalUnsafe.putShort(null, addr, type.short_value(v));
+			InternalUnsafe.putShort(null, addr, jtype.short_value(v));
 		else if (ptr_type == int.class)
-			InternalUnsafe.putInt(null, addr, type.int_value(v));
+			InternalUnsafe.putInt(null, addr, jtype.int_value(v));
 		else if (ptr_type == float.class)
-			InternalUnsafe.putFloat(null, addr, type.float_value(v));
+			InternalUnsafe.putFloat(null, addr, jtype.float_value(v));
 		else if (ptr_type == long.class)
-			InternalUnsafe.putLong(null, addr, type.long_value(v));
+			InternalUnsafe.putLong(null, addr, jtype.long_value(v));
 		else if (ptr_type == double.class)
-			InternalUnsafe.putDouble(null, addr, type.double_value(v));
+			InternalUnsafe.putDouble(null, addr, jtype.double_value(v));
 		else
-			InternalUnsafe.copyMemory0(v, markWord.HEADER_BYTE_LENGTH, dereference(), markWord.HEADER_BYTE_LENGTH, type.sizeof_object(v.getClass()) - markWord.HEADER_BYTE_LENGTH);// 只拷贝字段，不覆盖对象头
+			InternalUnsafe.copyMemory0(v, markWord.HEADER_BYTE_LENGTH, dereference(), markWord.HEADER_BYTE_LENGTH, jtype.sizeof_object(v.getClass()) - markWord.HEADER_BYTE_LENGTH);// 只拷贝字段，不覆盖对象头
 		return this;
 	}
 }

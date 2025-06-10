@@ -6,8 +6,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 
-import lyra.lang.base.HandleBase;
+import lyra.lang.internal.HandleBase;
 import lyra.object.ObjectManipulator;
+import lyra.vm.base.VmBase;
 
 public final class InternalUnsafe {
 	private static Class<?> internalUnsafeClass;
@@ -65,6 +66,13 @@ public final class InternalUnsafe {
 
 	public static final int ADDRESS_SIZE;
 	public static final int ARRAY_OBJECT_BASE_OFFSET;
+	public static final int ARRAY_OBJECT_INDEX_SCALE;
+
+	/**
+	 * OOP大小，只会是4或8.<br>
+	 * 32位JVM和开启压缩OOP的64位JVM上为4，未开启压缩OOP的64位JVM上为8.<br>
+	 */
+	public static final long OOP_SIZE;
 
 	static {
 		VarHandle theInternalUnsafe;
@@ -128,6 +136,8 @@ public final class InternalUnsafe {
 
 		ADDRESS_SIZE = addressSize();
 		ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
+		ARRAY_OBJECT_INDEX_SCALE = arrayIndexScale(Object[].class);
+		OOP_SIZE = ARRAY_OBJECT_INDEX_SCALE;
 	}
 
 	public static final class Invoker {
@@ -161,7 +171,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return HandleBase.UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_LONG;
 	}
 
 	public static long objectFieldOffset(Class<?> cls, String field_name) {
@@ -170,7 +180,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return HandleBase.UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_LONG;
 	}
 
 	public static Object staticFieldBase(Field field) {
@@ -188,7 +198,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return HandleBase.UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_LONG;
 	}
 
 	/**
@@ -218,13 +228,54 @@ public final class InternalUnsafe {
 		}
 	}
 
+	/**
+	 * Unsafe的getAddress方法，令人不解的是即便开启压缩OOP，ADDRESS_SIZE也总是8，正常来说应该是4.
+	 * 
+	 * @param o
+	 * @param offset
+	 * @return
+	 */
 	public static long getAddress(Object o, long offset) {
 		try {
 			return (long) getAddress.invoke(internalUnsafe, o, offset);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return HandleBase.UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_LONG;
+	}
+
+	/**
+	 * 一个根据是否开启压缩OOP动态决定地址大小的方法，可能这才是正确的获取对象地址的方式。
+	 * 
+	 * @param o
+	 * @param offset
+	 * @return
+	 */
+	public static long fetchNativeAddress(Object o, long offset) {
+		try {
+			if (OOP_SIZE == 4) {
+				long addr = ((int) getInt.invoke(internalUnsafe, o, offset)) & 0xFFFFFFFFL;// 地址是个32位无符号整数，不能直接强转成有符号的long整数。
+				if (VmBase.ON_64_BIT_JVM)// 64位的JVM上，对象地址却只有4字节，就说明需要向左位移来得到真实地址。
+					return addr << VmBase.NATIVE_ADDRESS_SHIFT;
+				else
+					return addr;
+			} else
+				return (long) getLong.invoke(internalUnsafe, o, offset);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return HandleBase.UNREACHABLE_LONG;
+	}
+
+	public static void storeNativeAddress(Object o, long offset, long addr) {
+		try {
+			if (OOP_SIZE == 4) {
+				putInt.invoke(internalUnsafe, o, offset, (int) (VmBase.ON_64_BIT_JVM ? addr >> VmBase.NATIVE_ADDRESS_SHIFT : addr));// 向右位移并丢弃高32位
+			} else
+				putLong.invoke(internalUnsafe, o, offset, addr);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	/**
@@ -280,7 +331,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return HandleBase.UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_LONG;
 	}
 
 	public static void freeMemory(long address) {
@@ -324,6 +375,12 @@ public final class InternalUnsafe {
 		return HandleBase.UNREACHABLE_INT;
 	}
 
+	/**
+	 * 获取数组元素占用内存的大小，单位字节。
+	 * 
+	 * @param arrayClass
+	 * @return
+	 */
 	public static int arrayIndexScale(Class<?> arrayClass) {
 		try {
 			return (int) arrayIndexScale.invoke(internalUnsafe, arrayClass);
@@ -456,7 +513,7 @@ public final class InternalUnsafe {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		return HandleBase.UNREACHABLE_lONG;
+		return HandleBase.UNREACHABLE_LONG;
 	}
 
 	public static void putDouble(Object o, long offset, double x) {

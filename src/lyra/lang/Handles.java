@@ -6,9 +6,12 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
-import lyra.lang.base.HandleBase;
-import lyra.lang.base.ReflectionBase;
+import lyra.lang.internal.HandleBase;
+import lyra.lang.internal.MemberName;
+import lyra.lang.internal.ReflectionBase;
 
 /**
  * 句柄操作相关，包括调用native方法<br>
@@ -121,5 +124,28 @@ public class Handles extends HandleBase {
 			ex.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * 使用反射获取目标信息并查找对应的方法句柄，仅支持查找本类的方法和构造函数。
+	 * 
+	 * @param clazz
+	 * @param method_name
+	 * @param return_type
+	 * @param arg_types
+	 * @return
+	 */
+	public static MethodHandle findMethodHandle(Class<?> clazz, String method_name, Class<?>... arg_types) {
+		MethodHandle m = null;
+		if (method_name.equals(MemberName.CONSTRUCTOR_NAME))
+			m = HandleBase.findConstructor(clazz, arg_types);
+		else {
+			Method rm = Reflection.getDeclaredMethod(clazz, method_name, arg_types);
+			if (Modifier.isStatic(rm.getModifiers()))
+				m = Handles.findStaticMethodHandle(clazz, method_name, rm.getReturnType(), arg_types);
+			else
+				m = Handles.findVirtualMethodHandle(clazz, method_name, rm.getReturnType(), arg_types);
+		}
+		return m;
 	}
 }

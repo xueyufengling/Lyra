@@ -13,8 +13,8 @@ import lyra.filesystem.UriPath;
 import lyra.lang.Handles;
 import lyra.lang.JavaLang;
 import lyra.lang.Reflection;
-import lyra.lang.base.HandleBase;
-import lyra.lang.base.ReflectionBase;
+import lyra.lang.internal.HandleBase;
+import lyra.lang.internal.ReflectionBase;
 import lyra.object.ObjectManipulator;
 
 public class KlassLoader {
