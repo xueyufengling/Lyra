@@ -102,7 +102,7 @@ public class Callable {
 	 * @param args
 	 * @return
 	 */
-	public Object invoke(Object... args) {
+	public Object call(Object... args) {
 		try {
 			return warppedMethod.invokeWithArguments(args);
 		} catch (Throwable ex) {

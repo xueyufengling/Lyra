@@ -9,7 +9,7 @@ import java.util.Properties;
 
 import lyra.lang.Handles;
 import lyra.object.ObjectManipulator;
-import lyra.vm.base.VmBase;
+import lyra.vm.internal.VmBase;
 
 /**
  * 管理JVM的相关功能

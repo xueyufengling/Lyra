@@ -6,9 +6,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 
+import lyra.cxx.pointer;
+import lyra.internal.oops.CompressedOops;
 import lyra.lang.internal.HandleBase;
 import lyra.object.ObjectManipulator;
-import lyra.vm.base.VmBase;
+import lyra.vm.internal.VmBase;
 
 public final class InternalUnsafe {
 	private static Class<?> internalUnsafeClass;
@@ -247,32 +249,35 @@ public final class InternalUnsafe {
 	/**
 	 * 一个根据是否开启压缩OOP动态决定地址大小的方法，可能这才是正确的获取对象地址的方式。
 	 * 
-	 * @param o
+	 * @param base
 	 * @param offset
 	 * @return
 	 */
-	public static long fetchNativeAddress(Object o, long offset) {
+	public static long fetchNativeAddress(Object base, long offset) {
 		try {
 			if (OOP_SIZE == 4) {
-				long addr = ((int) getInt.invoke(internalUnsafe, o, offset)) & 0xFFFFFFFFL;// 地址是个32位无符号整数，不能直接强转成有符号的long整数。
+				int addr = (int) getInt.invoke(internalUnsafe, base, offset);// 地址是个32位无符号整数，不能直接强转成有符号的long整数。
 				if (VmBase.ON_64_BIT_JVM)// 64位的JVM上，对象地址却只有4字节，就说明需要向左位移来得到真实地址。
-					return addr << VmBase.NATIVE_ADDRESS_SHIFT;
+					return CompressedOops.decode(addr);
 				else
-					return addr;
+					return pointer.uint_ptr(addr);
 			} else
-				return (long) getLong.invoke(internalUnsafe, o, offset);
+				return (long) getLong.invoke(internalUnsafe, base, offset);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
 		return HandleBase.UNREACHABLE_LONG;
 	}
 
-	public static void storeNativeAddress(Object o, long offset, long addr) {
+	public static void storeNativeAddress(Object base, long offset, long addr) {
 		try {
 			if (OOP_SIZE == 4) {
-				putInt.invoke(internalUnsafe, o, offset, (int) (VmBase.ON_64_BIT_JVM ? addr >> VmBase.NATIVE_ADDRESS_SHIFT : addr));// 向右位移并丢弃高32位
+				if (VmBase.ON_64_BIT_JVM)
+					putInt.invoke(internalUnsafe, base, offset, CompressedOops.encode(addr));// 向右位移并丢弃高32位
+				else
+					putInt.invoke(internalUnsafe, base, offset, addr);
 			} else
-				putLong.invoke(internalUnsafe, o, offset, addr);
+				putLong.invoke(internalUnsafe, base, offset, addr);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}

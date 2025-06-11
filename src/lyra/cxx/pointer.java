@@ -9,7 +9,7 @@ import lyra.lang.InternalUnsafe;
 import lyra.lang.Reflection;
 
 /**
- * C++指针，实际上是JVM使用的相对内存地址<br>
+ * C++指针，使用机器的绝对内存地址<br>
  * 不要用于取对象地址，短时间内可能不会出问题，但对象会随着GC过程移动，原先的地址会失效。<br>
  * 主要配合memory使用，对分配的固定地址内存进行操作。
  */
@@ -134,6 +134,20 @@ public class pointer {
 
 	public static final pointer at(long addr) {
 		return new pointer(addr);
+	}
+
+	/**
+	 * 用于将signed int类型储存的unsigned int值转换为unsigned long值。<br>
+	 * 用法：{@code uint64_t addr = (int32_t) & UINT32_T_MASK;}
+	 */
+	public static final long UINT32_T_MASK = 0xFFFFFFFFL;
+
+	public static final long uint_ptr(int oop_addr) {
+		return oop_addr & UINT32_T_MASK;
+	}
+
+	public static final pointer at(int _32bit_addr) {
+		return new pointer(_32bit_addr & UINT32_T_MASK);
 	}
 
 	/**

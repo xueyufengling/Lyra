@@ -1,7 +1,7 @@
 package lyra.internal.oops;
 
 import lyra.lang.InternalUnsafe;
-import lyra.vm.base.VmBase;
+import lyra.vm.internal.VmBase;
 
 /**
  * https://github.com/openjdk/jdk/blob/d7352559195b9e052c3eb24d773c0d6c10dc23ad/src/hotspot/share/oops/markWord.hpp#L77

@@ -1,6 +1,6 @@
 package lyra.internal.oops;
 
-import lyra.vm.base.VmBase;
+import lyra.vm.internal.VmBase;
 
 public class ObjLayout {
 
