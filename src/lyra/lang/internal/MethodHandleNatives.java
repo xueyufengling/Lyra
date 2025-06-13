@@ -161,4 +161,9 @@ public class MethodHandleNatives {
 		}
 		return new MemberVMInfo((Long) vminfo[0], vminfo[1]);
 	}
+
+	public static MemberVMInfo getMemberVMInfo(Class<?> target, String method_name, Class<?>... arg_types) {
+		Object memberName = MemberName.memberNameOf(Handles.findMethodHandle(target, method_name, arg_types));
+		return getMemberVMInfo(memberName);
+	}
 }

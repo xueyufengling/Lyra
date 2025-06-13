@@ -137,7 +137,7 @@ public class pointer {
 	}
 
 	public static final pointer at(int _32bit_addr) {
-		return new pointer(cxx_type.uint_ptr(_32bit_addr));
+		return new pointer(cxx_stdtypes.uint_ptr(_32bit_addr));
 	}
 
 	/**
@@ -367,7 +367,7 @@ public class pointer {
 	public final void print_memory(long size) {
 		pointer indicator = this.copy().cast(byte.class);
 		for (int i = 0; i < size; ++i, indicator.inc()) {
-			System.err.print(String.format("%02x", cxx_type.uint_ptr((byte) indicator.dereference())) + " ");
+			System.err.print(String.format("%02x", cxx_stdtypes.uint_ptr((byte) indicator.dereference())) + " ");
 		}
 	}
 }

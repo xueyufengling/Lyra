@@ -1,6 +1,6 @@
 package lyra.internal.oops;
 
-import lyra.cxx.cxx_type;
+import lyra.cxx.cxx_stdtypes;
 import lyra.cxx.pointer;
 import lyra.vm.internal.VmBase;
 
@@ -88,6 +88,6 @@ public class CompressedOops {
 	 * @return
 	 */
 	public static final long decode(int oop_addr) {
-		return ((oop_addr & cxx_type.UINT32_T_MASK) << shift) + base;
+		return ((oop_addr & cxx_stdtypes.UINT32_T_MASK) << shift) + base;
 	}
 }

@@ -6,7 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 
-import lyra.cxx.cxx_type;
+import lyra.cxx.cxx_stdtypes;
 import lyra.internal.oops.CompressedOops;
 import lyra.lang.internal.HandleBase;
 import lyra.object.ObjectManipulator;
@@ -260,7 +260,7 @@ public final class InternalUnsafe {
 				if (VmBase.ON_64_BIT_JVM)// 64位的JVM上，对象地址却只有4字节，就说明需要向左位移来得到真实地址。
 					return CompressedOops.decode(addr);
 				else
-					return cxx_type.uint_ptr(addr);
+					return cxx_stdtypes.uint_ptr(addr);
 			} else
 				return (long) getLong.invoke(internalUnsafe, base, offset);
 		} catch (Throwable ex) {

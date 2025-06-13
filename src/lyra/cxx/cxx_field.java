@@ -1,23 +1,133 @@
 package lyra.cxx;
 
-import java.util.HashMap;
+import lyra.lang.InternalUnsafe;
 
-public class cxx_field {
-	public static class offset_counter {
-		private static final HashMap<String, offset_counter> counters = new HashMap<>();
+public class cxx_field implements Cloneable {
 
-		long current_offset = 0;
-
-		private offset_counter(long start_offset) {
-			current_offset = start_offset;
+	/**
+	 * 克隆字段，当分析继承结构需要修改offset时使用
+	 */
+	@Override
+	public cxx_field clone() {
+		try {
+			return (cxx_field) super.clone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
 		}
+		return null;
+	}
 
-		public long append(long typeSize) {
-			return current_offset += typeSize;
-		}
+	@Override
+	public String toString() {
+		return type.toString() + ' ' + name;
+	}
 
-		public static offset_counter get(String typeName) {
-			return counters.computeIfAbsent(typeName, (String name) -> new offset_counter(0));
-		}
+	private String name;
+
+	/**
+	 * 字段偏移量，由cxx_type类计算
+	 */
+	long offset = 0;
+
+	/**
+	 * 该字段的类型
+	 */
+	private cxx_type type;
+
+	/**
+	 * 声明该字段的类
+	 */
+	cxx_type decl_type;
+
+	/**
+	 * 字段偏移量
+	 * 
+	 * @return
+	 */
+	public long offset() {
+		return offset;
+	}
+
+	/**
+	 * 字段名称
+	 * 
+	 * @return
+	 */
+	public String name() {
+		return name;
+	}
+
+	/**
+	 * 字段类型
+	 * 
+	 * @return
+	 */
+	public cxx_type type() {
+		return type;
+	}
+
+	/**
+	 * 该字段属于哪个类
+	 * 
+	 * @return
+	 */
+	public cxx_type decl_type() {
+		return decl_type;
+	}
+
+	private cxx_field(String name, cxx_type type) {
+		this.name = name;
+		this.type = type;
+	}
+
+	/**
+	 * 定义字段
+	 * 
+	 * @param name
+	 * @param type
+	 * @return
+	 */
+	public static final cxx_field define(String name, cxx_type type) {
+		return new cxx_field(name, type);
+	}
+
+	/**
+	 * 访问一个基本类型字段
+	 * 
+	 * @param native_addr
+	 * @return
+	 */
+	public final Object access(long native_addr) {
+		long access_addr = native_addr + offset;
+		if (type == cxx_stdtypes._char || type == cxx_stdtypes.int8_t)
+			return InternalUnsafe.getByte(null, access_addr);
+		else if (type == cxx_stdtypes.unsigned_char || type == cxx_stdtypes.uint8_t)
+			return cxx_stdtypes.uint8_t(InternalUnsafe.getByte(null, access_addr));
+		else if (type == cxx_stdtypes._short || type == cxx_stdtypes.int16_t)
+			return InternalUnsafe.getShort(null, access_addr);
+		else if (type == cxx_stdtypes.unsigned_short || type == cxx_stdtypes.uint16_t)
+			return cxx_stdtypes.uint16_t(InternalUnsafe.getShort(null, access_addr));
+		else if (type == cxx_stdtypes._int || type == cxx_stdtypes.int32_t)
+			return InternalUnsafe.getInt(null, access_addr);
+		else if (type == cxx_stdtypes.unsigned_int || type == cxx_stdtypes.uint32_t || type == cxx_stdtypes.bool)
+			return cxx_stdtypes.uint32_t(InternalUnsafe.getInt(null, access_addr));
+		else if (type == cxx_stdtypes._long_long || type == cxx_stdtypes.int64_t || type == cxx_stdtypes.unsigned_long_long || type == cxx_stdtypes.uint64_t)// 很遗憾，Java没有比64位无符号整数还大的基本类型，因此不论有无符号均储存在Java的有符号long类型
+			return InternalUnsafe.getLong(null, access_addr);
+		else if (type == cxx_stdtypes._float)
+			return InternalUnsafe.getFloat(null, access_addr);
+		else if (type == cxx_stdtypes._double)
+			return InternalUnsafe.getDouble(null, access_addr);
+		else if (type == cxx_stdtypes.WORD || type == cxx_stdtypes.pointer || type == cxx_stdtypes.uintptr_t) {
+			if (type.size() == 4)
+				return cxx_stdtypes.uint32_t(InternalUnsafe.getInt(null, access_addr));
+			else if (type.size() == 8)
+				return InternalUnsafe.getLong(null, access_addr);
+		} else
+			throw new RuntimeException("Invalid access type " + type + ": Only support access non-void C++ primitive types and pointers.");
+		return 0;
+	}
+
+	public final Object access(pointer ptr) {
+		return access(ptr.addr);
 	}
 }
