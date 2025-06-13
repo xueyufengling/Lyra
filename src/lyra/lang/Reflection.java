@@ -514,6 +514,17 @@ public abstract class Reflection extends ReflectionBase {
 	}
 
 	/**
+	 * 判断一个类是否是另一个类的子类
+	 * 
+	 * @param son
+	 * @param parent
+	 * @return
+	 */
+	public static boolean is(Class<?> son, Class<?> parent) {
+		return parent.isAssignableFrom(son);
+	}
+
+	/**
 	 * jdk.internal.reflect.Reflection.isCallerSensitive()
 	 * 
 	 * @param m

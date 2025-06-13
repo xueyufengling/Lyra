@@ -3,6 +3,7 @@ package lyra.klass.special;
 import lyra.klass.GenericTypes;
 
 public interface RuntimeGenericType {
+	@SuppressWarnings("deprecation")
 	public default Class<?>[] genericTypes() {
 		return GenericTypes.classes(this.getClass());
 	}

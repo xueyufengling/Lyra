@@ -39,4 +39,34 @@ public final class Placeholders {
 	public static final void NotInlined(Object var) {
 
 	}
+
+	/**
+	 * 任何枚举类型的占位符
+	 */
+	public static enum AnyEnumeration {
+		Null;
+
+		/**
+		 * 将该占位符转换为实际的枚举类型值
+		 * 
+		 * @param <T>
+		 * @param targetClass
+		 * @return
+		 */
+		@SuppressWarnings("unchecked")
+		public final <T extends Enum<T>> T as(Class<T> targetClass) {
+			return (T) ObjectManipulator.cast(this, targetClass);
+		}
+
+		/**
+		 * 将一个枚举类型值包装为占位符
+		 * 
+		 * @param <T>
+		 * @param enumeration
+		 * @return
+		 */
+		public static final <T extends Enum<T>> AnyEnumeration pack(T enumeration) {
+			return (AnyEnumeration) ObjectManipulator.cast(enumeration, AnyEnumeration.class);
+		}
+	}
 }

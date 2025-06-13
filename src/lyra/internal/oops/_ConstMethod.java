@@ -1,7 +1,5 @@
 package lyra.internal.oops;
 
-import lyra.cxx.cxx_type;
-
 public class _ConstMethod {
 /*
 	private static final cxx_type.offset_counter oc = cxx_type.offset_counter.get("ConstMethod");

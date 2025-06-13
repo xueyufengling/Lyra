@@ -103,7 +103,7 @@ public class pointer {
 	 */
 	@Override
 	public String toString() {
-		return "0x" + Long.toHexString(addr);
+		return "0x" + ((addr >> 32 == 0) ? String.format("%08x", addr) : String.format("%016x", addr));
 	}
 
 	/**
@@ -136,18 +136,8 @@ public class pointer {
 		return new pointer(addr);
 	}
 
-	/**
-	 * 用于将signed int类型储存的unsigned int值转换为unsigned long值。<br>
-	 * 用法：{@code uint64_t addr = (int32_t) & UINT32_T_MASK;}
-	 */
-	public static final long UINT32_T_MASK = 0xFFFFFFFFL;
-
-	public static final long uint_ptr(int oop_addr) {
-		return oop_addr & UINT32_T_MASK;
-	}
-
 	public static final pointer at(int _32bit_addr) {
-		return new pointer(_32bit_addr & UINT32_T_MASK);
+		return new pointer(cxx_type.uint_ptr(_32bit_addr));
 	}
 
 	/**
@@ -372,5 +362,12 @@ public class pointer {
 		else
 			InternalUnsafe.copyMemory0(v, markWord.HEADER_BYTE_LENGTH, dereference(), markWord.HEADER_BYTE_LENGTH, jtype.sizeof_object(v.getClass()) - markWord.HEADER_BYTE_LENGTH);// 只拷贝字段，不覆盖对象头
 		return this;
+	}
+
+	public final void print_memory(long size) {
+		pointer indicator = this.copy().cast(byte.class);
+		for (int i = 0; i < size; ++i, indicator.inc()) {
+			System.err.print(String.format("%02x", cxx_type.uint_ptr((byte) indicator.dereference())) + " ");
+		}
 	}
 }

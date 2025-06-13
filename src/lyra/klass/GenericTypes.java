@@ -3,8 +3,79 @@ package lyra.klass;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
+
+import lyra.lang.Reflection;
 
 public class GenericTypes {
+	public static enum EntryType {
+		INTERFACE, CLASS, RAW_TYPE, UPPER_BOUNDS, LOWER_BOUNDS
+	}
+
+	/**
+	 * 单个类或上界类数组、下界类数组
+	 */
+	public static class Entry {
+		public final EntryType type;
+		private Class<?>[] result;
+
+		Entry(EntryType type, Class<?>... result) {
+			this.type = type;
+			this.result = result;
+		}
+
+		public Class<?> singleType() {
+			if (type == EntryType.INTERFACE | type == EntryType.CLASS || type == EntryType.RAW_TYPE)
+				return result[0];
+			else
+				return null;
+		}
+
+		public Class<?> type() {
+			return result[0];
+		}
+
+		public Class<?>[] upperBounds() {
+			if (type == EntryType.UPPER_BOUNDS)
+				return result;
+			else
+				return null;
+		}
+
+		public Class<?>[] lowerBounds() {
+			if (type == EntryType.LOWER_BOUNDS)
+				return result;
+			else
+				return null;
+		}
+
+		/**
+		 * 判断是否result中存在任意一个Class<?>严格地是cls类
+		 * 
+		 * @param cls
+		 * @return
+		 */
+		public boolean equalsAny(Class<?> cls) {
+			for (Class<?> c : result)
+				if (cls == c)
+					return true;
+			return false;
+		}
+
+		/**
+		 * 判断是否result中存在任意一个Class<?>是cls或其子类
+		 * 
+		 * @param cls
+		 * @return
+		 */
+		public boolean isAny(Class<?> cls) {
+			for (Class<?> c : result)
+				if (Reflection.is(c, cls))
+					return true;
+			return false;
+		}
+	}
+
 	/**
 	 * 字段的泛型参数是否是某些类型
 	 * 
@@ -13,11 +84,11 @@ public class GenericTypes {
 	 * @return
 	 */
 	public static boolean is(Field f, int[] indices, Class<?>... types) {
-		Class<?>[] classes = classes(f, indices);
+		Entry[] classes = classes(f, indices);
 		if (classes.length != types.length)
 			return false;
 		for (int idx = 0; idx < types.length; ++idx) {
-			if (!classes[idx].getTypeName().equals(types[idx].getTypeName()))
+			if (!classes[idx].isAny(types[idx]))
 				return false;
 		}
 		return true;
@@ -42,9 +113,9 @@ public class GenericTypes {
 	 * @return
 	 */
 	public static boolean startWith(Field f, int[] indices, Class<?>... types) {
-		Class<?>[] classes = classes(f, indices);
+		Entry[] classes = classes(f, indices);
 		for (int idx = 0; idx < types.length; ++idx) {
-			if (!classes[idx].getTypeName().equals(types[idx].getTypeName()))
+			if (!classes[idx].isAny(types[idx]))
 				return false;
 		}
 		return true;
@@ -60,7 +131,7 @@ public class GenericTypes {
 	 * @param f
 	 * @return
 	 */
-	public static Class<?>[] classes(Field f, int... indices) {
+	public static Entry[] classes(Field f, int... indices) {
 		Type currentType = f.getGenericType();
 		Type[] actualTypeArguments = null;
 		for (int nest_depth = 0; nest_depth < indices.length; ++nest_depth) {
@@ -79,25 +150,64 @@ public class GenericTypes {
 		}
 		// 获取最终深度的特定索引的全部泛型参数
 		actualTypeArguments = ((ParameterizedType) currentType).getActualTypeArguments();
-		Class<?>[] classes = new Class[actualTypeArguments.length];
+		Entry[] entries = new Entry[actualTypeArguments.length];
 		for (int idx = 0; idx < actualTypeArguments.length; ++idx) {
-			if (actualTypeArguments[idx] instanceof Class cls) {
-				classes[idx] = cls;
+			currentType = actualTypeArguments[idx];
+			if (currentType instanceof Class cls) {
+				entries[idx] = new Entry(EntryType.CLASS, cls);
 				continue;
 			}
 			// 如果参数还是泛型类，就直接getRawType()
-			else if (actualTypeArguments[idx] instanceof ParameterizedType parameterizedType) {
+			else if (currentType instanceof ParameterizedType parameterizedType) {
 				Type rawType = parameterizedType.getRawType();
 				if (rawType instanceof Class cls) {
-					classes[idx] = cls;
+					entries[idx] = new Entry(EntryType.RAW_TYPE, cls);
 					continue;
 				}
+			} else if (currentType instanceof WildcardType wildcardType) {
+				Type[] upper_bounds = wildcardType.getUpperBounds();
+				Type[] lower_bounds = wildcardType.getLowerBounds();
+				if (upper_bounds.length != 0) {
+					Class<?>[] upper_bounds_clsarr = new Class[upper_bounds.length];
+					for (int i = 0; i < upper_bounds_clsarr.length; ++i) {
+						upper_bounds_clsarr[idx] = resolveTypeClass(upper_bounds[i]);
+					}
+					entries[idx] = new Entry(EntryType.UPPER_BOUNDS, upper_bounds_clsarr);
+				} else if (lower_bounds.length != 0) {
+					Class<?>[] lower_bounds_clsarr = new Class[lower_bounds.length];
+					for (int i = 0; i < lower_bounds_clsarr.length; ++i) {
+						lower_bounds_clsarr[idx] = resolveTypeClass(lower_bounds[i]);
+					}
+					entries[idx] = new Entry(EntryType.LOWER_BOUNDS, lower_bounds_clsarr);
+				}
+				continue;
 			} else
-				classes[idx] = Object.class;
+				entries[idx] = null;
 		}
-		return classes;
+		return entries;
 	}
 
+	/**
+	 * 如果currentType是Class<?>则直接返回class，如果是带泛型参数的class，则返回rawType
+	 * 
+	 * @param currentType
+	 * @return
+	 */
+	public static Class<?> resolveTypeClass(Type currentType) {
+		if (currentType instanceof Class cls) {
+			return cls;
+		}
+		// 如果参数还是泛型类，就直接getRawType()
+		else if (currentType instanceof ParameterizedType parameterizedType) {
+			Type rawType = parameterizedType.getRawType();
+			if (rawType instanceof Class cls) {
+				return cls;
+			}
+		}
+		return null;
+	}
+
+	@Deprecated
 	public static Class<?>[] classes(Class<?> target) {
 		Type directSuperClassGenericType = target.getGenericSuperclass();
 		if (directSuperClassGenericType instanceof ParameterizedType superParameterizedType) {

@@ -6,5 +6,8 @@ package lyra.klass.special;
  * @param <Derived>
  */
 public interface CRTP<Derived> {
-	public abstract Class<Derived> getDerivedClass();
+	@SuppressWarnings("unchecked")
+	public default Class<Derived> getDerivedClass() {
+		return (Class<Derived>) this.getClass();
+	}
 }
