@@ -97,7 +97,7 @@ public class cxx_field implements Cloneable {
 	 * @param native_addr
 	 * @return
 	 */
-	public final Object access(long native_addr) {
+	final Object access(long native_addr) {
 		long access_addr = native_addr + offset;
 		if (type == cxx_stdtypes._char || type == cxx_stdtypes.int8_t)
 			return InternalUnsafe.getByte(null, access_addr);
@@ -118,16 +118,12 @@ public class cxx_field implements Cloneable {
 		else if (type == cxx_stdtypes._double)
 			return InternalUnsafe.getDouble(null, access_addr);
 		else if (type == cxx_stdtypes.WORD || type == cxx_stdtypes.pointer || type == cxx_stdtypes.uintptr_t) {
-			if (type.size() == 4)
+			if (cxx_type.sizeof(type) == 4)
 				return cxx_stdtypes.uint32_t(InternalUnsafe.getInt(null, access_addr));
-			else if (type.size() == 8)
+			else if (cxx_type.sizeof(type) == 8)
 				return InternalUnsafe.getLong(null, access_addr);
 		} else
-			throw new RuntimeException("Invalid access type " + type + ": Only support access non-void C++ primitive types and pointers.");
+			return new cxx_object(access_addr, type);
 		return 0;
-	}
-
-	public final Object access(pointer ptr) {
-		return access(ptr.addr);
 	}
 }

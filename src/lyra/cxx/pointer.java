@@ -18,7 +18,16 @@ public class pointer {
 	 * C++层的指针转换为(void*)(uint64_t)addr
 	 */
 	long addr;
-	Class<?> ptr_type;
+
+	/**
+	 * Java类型
+	 */
+	Class<?> ptr_jtype;
+
+	/**
+	 * C++类型
+	 */
+	cxx_type ptr_cxx_type;
 
 	/**
 	 * 指针算术运算的步长，与类型有关，以byte为单位
@@ -42,9 +51,20 @@ public class pointer {
 	 */
 	private pointer(long addr, Class<?> type, long stride, long ptr_type_klass_word) {
 		this.addr = addr;
-		this.ptr_type = type;
+		this.ptr_jtype = type;
 		this.stride = stride;
 		this.ptr_type_klass_word = ptr_type_klass_word;
+	}
+
+	/**
+	 * C++对象指针
+	 * 
+	 * @param addr
+	 * @param type
+	 */
+	private pointer(long addr, cxx_type type) {
+		this.addr = addr;
+		this.ptr_cxx_type = type;
 	}
 
 	/**
@@ -57,7 +77,8 @@ public class pointer {
 	 */
 	private pointer(pointer ptr) {
 		this.addr = ptr.addr;
-		this.ptr_type = ptr.ptr_type;
+		this.ptr_jtype = ptr.ptr_jtype;
+		this.ptr_cxx_type = ptr.ptr_cxx_type;
 		this.stride = ptr.stride;
 		this.ptr_type_klass_word = ptr.ptr_type_klass_word;
 	}
@@ -87,7 +108,7 @@ public class pointer {
 	}
 
 	public Class<?> type() {
-		return ptr_type;
+		return ptr_jtype;
 	}
 
 	public boolean is_nullptr() {
@@ -95,7 +116,7 @@ public class pointer {
 	}
 
 	public boolean is_void_ptr_type() {
-		return ptr_type == void_ptr_type;
+		return ptr_jtype == void_ptr_type || ptr_cxx_type.equals(cxx_stdtypes.pointer);
 	}
 
 	/**
@@ -118,7 +139,7 @@ public class pointer {
 
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(addr) ^ Objects.hashCode(ptr_type) ^ Objects.hashCode(ptr_type);
+		return Objects.hashCode(addr) ^ Objects.hashCode(ptr_jtype) ^ Objects.hashCode(ptr_jtype);
 	}
 
 	/**
@@ -129,6 +150,10 @@ public class pointer {
 	 * @return
 	 */
 	public static final pointer at(long addr, Class<?> type) {
+		return new pointer(addr, type);
+	}
+
+	public static final pointer at(long addr, cxx_type type) {
 		return new pointer(addr, type);
 	}
 
@@ -166,13 +191,20 @@ public class pointer {
 	 * @return
 	 */
 	public pointer cast(Class<?> destType) {
-		this.ptr_type = destType;
+		this.ptr_jtype = destType;
+		this.ptr_cxx_type = null;
 		this.stride = jtype.sizeof(destType);
 		if (!jtype.is_primitive(destType)) {
 			// 每次cast()的时候更新目标对象的类型
 			ptr_type_klass_word = markWord.get_klass_word(destType);
 		}
 		return this;
+	}
+
+	public pointer cast(cxx_type destType) {
+		this.ptr_jtype = null;
+		this.ptr_cxx_type = destType;
+		return null;
 	}
 
 	/**
@@ -200,7 +232,7 @@ public class pointer {
 	 * @return
 	 */
 	public pointer add(long step) {
-		return new pointer(addr + stride * step, ptr_type, stride, ptr_type_klass_word);
+		return new pointer(addr + stride * step, ptr_jtype, stride, ptr_type_klass_word);
 	}
 
 	/**
@@ -220,7 +252,7 @@ public class pointer {
 	}
 
 	public pointer sub(long step) {
-		return new pointer(addr - stride * step, ptr_type, stride, ptr_type_klass_word);
+		return new pointer(addr - stride * step, ptr_jtype, stride, ptr_type_klass_word);
 	}
 
 	public pointer dec(long step) {
@@ -271,6 +303,10 @@ public class pointer {
 		return pointer.at(ref.address_of_reference(), ref.ref_type);
 	}
 
+	public static final pointer address_of(cxx_object cxx_obj) {
+		return cxx_obj.ptr.copy();
+	}
+
 	/**
 	 * 因为基本类型都是by value传递参数入栈，取地址没意义，因此只能取类的字段地址
 	 * 
@@ -310,21 +346,23 @@ public class pointer {
 		// 不可对void*类型的指针取值
 		if (is_void_ptr_type())
 			throw new RuntimeException("Cannot dereference a void* pointer at " + this.toString());
-		if (ptr_type == byte.class)
+		else if (ptr_cxx_type != null)
+			return new cxx_object(this, ptr_cxx_type);
+		else if (ptr_jtype == byte.class)
 			return InternalUnsafe.getByte(null, addr);
-		else if (ptr_type == char.class)
+		else if (ptr_jtype == char.class)
 			return InternalUnsafe.getChar(null, addr);
-		else if (ptr_type == boolean.class)
+		else if (ptr_jtype == boolean.class)
 			return InternalUnsafe.getBoolean(null, addr);
-		else if (ptr_type == short.class)
+		else if (ptr_jtype == short.class)
 			return InternalUnsafe.getShort(null, addr);
-		else if (ptr_type == int.class)
+		else if (ptr_jtype == int.class)
 			return InternalUnsafe.getInt(null, addr);
-		else if (ptr_type == float.class)
+		else if (ptr_jtype == float.class)
 			return InternalUnsafe.getFloat(null, addr);
-		else if (ptr_type == long.class)
+		else if (ptr_jtype == long.class)
 			return InternalUnsafe.getLong(null, addr);
-		else if (ptr_type == double.class)
+		else if (ptr_jtype == double.class)
 			return InternalUnsafe.getDouble(null, addr);
 		else {
 			Object deref_obj = dereference_object(addr);
@@ -343,21 +381,22 @@ public class pointer {
 		// 不可对void*类型的指针取值
 		if (is_void_ptr_type())
 			throw new RuntimeException("Cannot dereference a void* pointer at " + this.toString());
-		if (ptr_type == byte.class)
+
+		else if (ptr_jtype == byte.class)
 			InternalUnsafe.putByte(null, addr, jtype.byte_value(v));
-		else if (ptr_type == char.class)
+		else if (ptr_jtype == char.class)
 			InternalUnsafe.putChar(null, addr, jtype.char_value(v));
-		else if (ptr_type == boolean.class)
+		else if (ptr_jtype == boolean.class)
 			InternalUnsafe.putBoolean(null, addr, jtype.boolean_value(v));
-		else if (ptr_type == short.class)
+		else if (ptr_jtype == short.class)
 			InternalUnsafe.putShort(null, addr, jtype.short_value(v));
-		else if (ptr_type == int.class)
+		else if (ptr_jtype == int.class)
 			InternalUnsafe.putInt(null, addr, jtype.int_value(v));
-		else if (ptr_type == float.class)
+		else if (ptr_jtype == float.class)
 			InternalUnsafe.putFloat(null, addr, jtype.float_value(v));
-		else if (ptr_type == long.class)
+		else if (ptr_jtype == long.class)
 			InternalUnsafe.putLong(null, addr, jtype.long_value(v));
-		else if (ptr_type == double.class)
+		else if (ptr_jtype == double.class)
 			InternalUnsafe.putDouble(null, addr, jtype.double_value(v));
 		else
 			InternalUnsafe.copyMemory0(v, markWord.HEADER_BYTE_LENGTH, dereference(), markWord.HEADER_BYTE_LENGTH, jtype.sizeof_object(v.getClass()) - markWord.HEADER_BYTE_LENGTH);// 只拷贝字段，不覆盖对象头

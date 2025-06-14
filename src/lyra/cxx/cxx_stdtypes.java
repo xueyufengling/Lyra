@@ -7,16 +7,16 @@ import lyra.vm.internal.VmBase;
  */
 public class cxx_stdtypes {
 	public static final cxx_type _char = cxx_type.define_primitive("char", 1);
-	public static final cxx_type unsigned_char = cxx_type.define_primitive("unsigned char", _char.size());
+	public static final cxx_type unsigned_char = cxx_type.define_primitive("unsigned char", cxx_type.sizeof(_char));
 	public static final cxx_type _short = cxx_type.define_primitive("short", 2);
-	public static final cxx_type unsigned_short = cxx_type.define_primitive("unsigned short", _short.size());
+	public static final cxx_type unsigned_short = cxx_type.define_primitive("unsigned short", cxx_type.sizeof(_short));
 	public static final cxx_type _int = cxx_type.define_primitive("int", 4);
-	public static final cxx_type unsigned_int = cxx_type.define_primitive("unsigned int", _int.size());
-	public static final cxx_type bool = cxx_type.define_primitive("bool", _int.size());
+	public static final cxx_type unsigned_int = cxx_type.define_primitive("unsigned int", cxx_type.sizeof(_int));
+	public static final cxx_type bool = cxx_type.define_primitive("bool", cxx_type.sizeof(_int));
 	public static final cxx_type _long_long = cxx_type.define_primitive("long long", 8);
-	public static final cxx_type unsigned_long_long = cxx_type.define_primitive("unsigned long long", _long_long.size());
-	public static final cxx_type _float = cxx_type.define_primitive("float", _int.size());
-	public static final cxx_type _double = cxx_type.define_primitive("double", _long_long.size());
+	public static final cxx_type unsigned_long_long = cxx_type.define_primitive("unsigned long long", cxx_type.sizeof(_long_long));
+	public static final cxx_type _float = cxx_type.define_primitive("float", cxx_type.sizeof(_int));
+	public static final cxx_type _double = cxx_type.define_primitive("double", cxx_type.sizeof(_long_long));
 	public static final cxx_type _void = cxx_type.define_primitive("void", 0);
 
 	/**
@@ -31,17 +31,34 @@ public class cxx_stdtypes {
 			WORD = cxx_type.define_primitive("WORD", 4);
 	}
 
-	public static final cxx_type pointer = cxx_type.define_primitive("*", WORD.size());
-	public static final cxx_type uintptr_t = cxx_type.define_primitive("uintptr_t", pointer.size());
+	public static final cxx_type pointer = cxx_type.define_primitive("void*", cxx_type.sizeof(WORD));
+
+	public static final cxx_type pointer(String type) {
+		return cxx_type.define_primitive(type + '*', cxx_type.sizeof(WORD));
+	}
+
+	public static final cxx_type pointer(cxx_type type) {
+		return cxx_type.define_primitive(type.name() + '*', cxx_type.sizeof(WORD));
+	}
+
+	public static final cxx_type uintptr_t = cxx_type.define_primitive("uintptr_t", cxx_type.sizeof(pointer));
+
+	public static final cxx_type uintptr_t(String type) {
+		return cxx_type.define_primitive(type + '*', cxx_type.sizeof(WORD));
+	}
+
+	public static final cxx_type uintptr_t(cxx_type type) {
+		return cxx_type.define_primitive(type.name() + '*', cxx_type.sizeof(WORD));
+	}
 
 	public static final cxx_type int8_t = cxx_type.define_primitive("int8_t", 1);
-	public static final cxx_type uint8_t = cxx_type.define_primitive("uint8_t", int8_t.size());
+	public static final cxx_type uint8_t = cxx_type.define_primitive("uint8_t", cxx_type.sizeof(int8_t));
 	public static final cxx_type int16_t = cxx_type.define_primitive("int16_t", 2);
-	public static final cxx_type uint16_t = cxx_type.define_primitive("uint16_t", int16_t.size());
+	public static final cxx_type uint16_t = cxx_type.define_primitive("uint16_t", cxx_type.sizeof(int16_t));
 	public static final cxx_type int32_t = cxx_type.define_primitive("int32_t", 4);
-	public static final cxx_type uint32_t = cxx_type.define_primitive("uint32_t", int32_t.size());
+	public static final cxx_type uint32_t = cxx_type.define_primitive("uint32_t", cxx_type.sizeof(int32_t));
 	public static final cxx_type int64_t = cxx_type.define_primitive("int64_t", 8);
-	public static final cxx_type uint64_t = cxx_type.define_primitive("uint64_t", int64_t.size());
+	public static final cxx_type uint64_t = cxx_type.define_primitive("uint64_t", cxx_type.sizeof(int64_t));
 
 	/**
 	 * 用于将signed int类型储存的unsigned int值转换为unsigned long值。<br>

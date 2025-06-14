@@ -7,7 +7,7 @@ import lyra.lang.Callable;
 import lyra.lang.InternalUnsafe;
 import lyra.lang.internal.HandleBase;
 
-public abstract class object {
+public abstract class jobject {
 	/**
 	 * 在给定指针处调用对象的构造函数，不会设置对象头，仅初始化字段。父类的构造函数也会被调用。
 	 * 
@@ -29,7 +29,7 @@ public abstract class object {
 	}
 
 	public static final pointer placement_new(pointer ptr, Class<?>[] arg_types, Object... args) {
-		Class<?> target_type = ptr.ptr_type;
+		Class<?> target_type = ptr.ptr_jtype;
 		MethodHandle constructor = Callable.invokeVirtualConstructor(target_type, arg_types);
 		try {
 			HandleBase.invoke(constructor, ptr.dereference(), args);
