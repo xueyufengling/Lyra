@@ -24,8 +24,9 @@ public class KlassWalker {
 		 * @param f
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
+		 * @return 是否继续迭代，返回true代表继续迭代，false则终止迭代
 		 */
-		public void operate(Field f, boolean isStatic, Object value);
+		public boolean operate(Field f, boolean isStatic, Object value);
 	}
 
 	@FunctionalInterface
@@ -37,7 +38,7 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(String field_name, Class<?> field_type, boolean isStatic, Object value);
+		public boolean operate(String field_name, Class<?> field_type, boolean isStatic, Object value);
 	}
 
 	/**
@@ -50,13 +51,14 @@ public class KlassWalker {
 		Field[] fields = Reflection.getDeclaredFields(cls);
 		for (Field f : fields) {
 			boolean isStatic = Modifier.isStatic(f.getModifiers());
-			op.operate(f, isStatic, isStatic ? ObjectManipulator.access(cls, f) : null);
+			if (!op.operate(f, isStatic, isStatic ? ObjectManipulator.access(cls, f) : null))
+				return;
 		}
 	}
 
 	public static void walkFields(Class<?> cls, SimpleFieldOperation op) {
 		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
-			op.operate(f.getName(), f.getType(), isStatic, value);
+			return op.operate(f.getName(), f.getType(), isStatic, value);
 		});
 	}
 
@@ -69,18 +71,19 @@ public class KlassWalker {
 	public static void walkFields(Object obj, FieldOperation op) {
 		Field[] fields = Reflection.getDeclaredFields(obj.getClass());
 		for (Field f : fields) {
-			op.operate(f, Modifier.isStatic(f.getModifiers()), ObjectManipulator.access(obj, f));
+			if (!op.operate(f, Modifier.isStatic(f.getModifiers()), ObjectManipulator.access(obj, f)))
+				return;
 		}
 	}
 
 	public static void walkFields(Object obj, SimpleFieldOperation op) {
 		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
-			op.operate(f.getName(), f.getType(), isStatic, value);
+			return op.operate(f.getName(), f.getType(), isStatic, value);
 		});
 	}
 
 	@FunctionalInterface
-	public static interface FieldAnnotationOperation<T extends Annotation> {
+	public static interface AnnotatedFieldOperation<T extends Annotation> {
 		/**
 		 * 遍历每个具有某注解的字段
 		 * 
@@ -88,11 +91,11 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(Field f, boolean isStatic, Object value, T annotation);
+		public boolean operate(Field f, boolean isStatic, Object value, T annotation);
 	}
 
 	@FunctionalInterface
-	public static interface SimpleFieldAnnotationOperation<T extends Annotation> {
+	public static interface SimpleAnnotatedFieldOperation<T extends Annotation> {
 		/**
 		 * 遍历每个具有某注解的字段
 		 * 
@@ -100,7 +103,7 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(String field_name, Class<?> field_type, boolean isStatic, Object value, T annotation);
+		public boolean operate(String field_name, Class<?> field_type, boolean isStatic, Object value, T annotation);
 	}
 
 	/**
@@ -110,31 +113,79 @@ public class KlassWalker {
 	 * @param annotation
 	 * @param op
 	 */
-	public static <T extends Annotation> void walkFields(Class<?> cls, Class<T> annotationCls, FieldAnnotationOperation<T> op) {
+	public static <T extends Annotation> void walkAnnotatedFields(Class<?> cls, Class<T> annotationCls, AnnotatedFieldOperation<T> op) {
 		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
 			T annotation = f.getAnnotation(annotationCls);
 			if (annotation != null)
-				op.operate(f, isStatic, value, annotation);
+				return op.operate(f, isStatic, value, annotation);
+			return true;
 		});
 	}
 
-	public static <T extends Annotation> void walkFields(Class<?> cls, Class<T> annotationCls, SimpleFieldAnnotationOperation<T> op) {
-		walkFields(cls, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
-			op.operate(f.getName(), f.getType(), isStatic, value, annotation);
+	public static <T extends Annotation> void walkAnnotatedFields(Class<?> cls, Class<T> annotationCls, SimpleAnnotatedFieldOperation<T> op) {
+		walkAnnotatedFields(cls, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
+			return op.operate(f.getName(), f.getType(), isStatic, value, annotation);
 		});
 	}
 
-	public static <T extends Annotation> void walkFields(Object obj, Class<T> annotationCls, FieldAnnotationOperation<T> op) {
+	public static <T extends Annotation> void walkAnnotatedFields(Object obj, Class<T> annotationCls, AnnotatedFieldOperation<T> op) {
 		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
 			T annotation = f.getAnnotation(annotationCls);
 			if (annotation != null)
-				op.operate(f, isStatic, value, annotation);
+				return op.operate(f, isStatic, value, annotation);
+			return true;
 		});
 	}
 
-	public static <T extends Annotation> void walkFields(Object obj, Class<T> annotationCls, SimpleFieldAnnotationOperation<T> op) {
-		walkFields(obj, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
-			op.operate(f.getName(), f.getType(), isStatic, value, annotation);
+	public static <T extends Annotation> void walkAnnotatedFields(Object obj, Class<T> annotationCls, SimpleAnnotatedFieldOperation<T> op) {
+		walkAnnotatedFields(obj, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
+			return op.operate(f.getName(), f.getType(), isStatic, value, annotation);
+		});
+	}
+
+	@FunctionalInterface
+	public static interface TypeFieldOperation<T> {
+		/**
+		 * 遍历每个具有某注解的字段
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public boolean operate(Field f, boolean isStatic, T value);
+	}
+
+	/**
+	 * 遍历指定类的目标类型或其子类的字段
+	 * 
+	 * @param <T>
+	 * @param cls
+	 * @param targetType
+	 * @param op
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> void walkTypeFields(Class<?> cls, Class<T> targetType, TypeFieldOperation<T> op) {
+		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
+			if (Reflection.is(f, targetType))
+				return op.operate(f, isStatic, (T) value);
+			return true;
+		});
+	}
+
+	/**
+	 * 遍历指定对象的目标类型或其子类的字段
+	 * 
+	 * @param <T>
+	 * @param obj
+	 * @param targetType
+	 * @param op
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> void walkTypeFields(Object obj, Class<T> targetType, TypeFieldOperation<T> op) {
+		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
+			if (Reflection.is(f, targetType))
+				return op.operate(f, isStatic, (T) value);
+			return true;
 		});
 	}
 
@@ -147,13 +198,14 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(Method f, boolean isStatic);
+		public boolean operate(Method f, boolean isStatic);
 	}
 
-	public static void walkFields(Class<?> cls, MethodOperation op) {
+	public static void walkMethods(Class<?> cls, MethodOperation op) {
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		for (Method m : methods) {
-			op.operate(m, Modifier.isStatic(m.getModifiers()));
+			if (!op.operate(m, Modifier.isStatic(m.getModifiers())))
+				return;
 		}
 	}
 
@@ -166,13 +218,14 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(Constructor<?> f, boolean isStatic);
+		public boolean operate(Constructor<?> f, boolean isStatic);
 	}
 
-	public static void walkFields(Class<?> cls, ConstructorOperation op) {
+	public static void walkConstructors(Class<?> cls, ConstructorOperation op) {
 		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
 		for (Constructor<?> c : constructors) {
-			op.operate(c, Modifier.isStatic(c.getModifiers()));
+			if (!op.operate(c, Modifier.isStatic(c.getModifiers())))
+				return;
 		}
 	}
 
@@ -185,17 +238,19 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(Executable f, boolean isStatic);
+		public boolean operate(Executable f, boolean isStatic);
 	}
 
 	public static void walkExecutables(Class<?> cls, ExecutableOperation op) {
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
 		for (Constructor<?> c : constructors) {
-			op.operate(c, Modifier.isStatic(c.getModifiers()));
+			if (!op.operate(c, Modifier.isStatic(c.getModifiers())))
+				return;
 		}
 		for (Method m : methods) {
-			op.operate(m, Modifier.isStatic(m.getModifiers()));
+			if (!op.operate(m, Modifier.isStatic(m.getModifiers())))
+				return;
 		}
 	}
 
@@ -208,7 +263,7 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public void operate(AccessibleObject ao, boolean isStatic);
+		public boolean operate(AccessibleObject ao, boolean isStatic);
 	}
 
 	public static void walkAccessibleObjects(Class<?> cls, AccessibleObjectOperation op) {
@@ -216,13 +271,16 @@ public class KlassWalker {
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
 		for (Field f : fields) {
-			op.operate(f, Modifier.isStatic(f.getModifiers()));
+			if (!op.operate(f, Modifier.isStatic(f.getModifiers())))
+				return;
 		}
 		for (Constructor<?> c : constructors) {
-			op.operate(c, Modifier.isStatic(c.getModifiers()));
+			if (!op.operate(c, Modifier.isStatic(c.getModifiers())))
+				return;
 		}
 		for (Method m : methods) {
-			op.operate(m, Modifier.isStatic(m.getModifiers()));
+			if (!op.operate(m, Modifier.isStatic(m.getModifiers())))
+				return;
 		}
 	}
 

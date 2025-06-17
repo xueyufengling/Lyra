@@ -52,6 +52,7 @@ public class KlassScanner {
 					if (filter.condition(ao))
 						annotated.add(ao);
 				}
+				return true;
 			});
 		}
 		return annotated;
@@ -83,6 +84,7 @@ public class KlassScanner {
 					if (filter.condition(ao))
 						annotated.add(ao);
 				}
+				return true;
 			});
 		}
 		return annotated;
@@ -104,6 +106,7 @@ public class KlassScanner {
 			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic) -> {
 				if (ao.isAnnotationPresent(annotationCls))
 					annotated.add(ao);
+				return true;
 			});
 		}
 		return annotated;

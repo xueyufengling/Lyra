@@ -125,14 +125,11 @@ public class GenericTypes {
 		return startWith(f, new int[] {}, types);
 	}
 
-	/**
-	 * 获取指定字段的指定嵌套深度的泛型参数的Class<?>
-	 * 
-	 * @param f
-	 * @return
-	 */
 	public static Entry[] classes(Field f, int... indices) {
-		Type currentType = f.getGenericType();
+		return classes(f.getGenericType(), indices);
+	}
+
+	public static Type type(Type currentType, int... indices) {
 		Type[] actualTypeArguments = null;
 		for (int nest_depth = 0; nest_depth < indices.length; ++nest_depth) {
 			// 没有泛型参数则直接返回
@@ -148,8 +145,24 @@ public class GenericTypes {
 			} else
 				return null;
 		}
+		return currentType;
+	}
+
+	/**
+	 * 获取指定字段的指定嵌套深度的泛型参数的Class<?>
+	 * 
+	 * @param currentType 当前的类型
+	 * @param indices     从最外层开始，向内的索引
+	 * @return
+	 */
+	public static Entry[] classes(Type currentType, int... indices) {
+		Type[] actualTypeArguments = null;
+		currentType = type(currentType, indices);
 		// 获取最终深度的特定索引的全部泛型参数
-		actualTypeArguments = ((ParameterizedType) currentType).getActualTypeArguments();
+		if (currentType instanceof ParameterizedType pt)
+			actualTypeArguments = pt.getActualTypeArguments();
+		else
+			actualTypeArguments = new Type[] { currentType };
 		Entry[] entries = new Entry[actualTypeArguments.length];
 		for (int idx = 0; idx < actualTypeArguments.length; ++idx) {
 			currentType = actualTypeArguments[idx];
@@ -205,6 +218,20 @@ public class GenericTypes {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * 获取最外层的第一个泛型参数
+	 * 
+	 * @param registryKeyField
+	 * @return
+	 */
+	public static Class<?> getFirstGenericType(Field f) {
+		return classes(f)[0].type();
+	}
+
+	public static Class<?> getFirstGenericType(Type t) {
+		return classes(t)[0].type();
 	}
 
 	@Deprecated

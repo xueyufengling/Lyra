@@ -1,7 +1,10 @@
 package lyra.lang;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.util.List;
+
+import lyra.klass.GenericTypes;
 
 public class Arrays {
 	@SuppressWarnings("unchecked")
@@ -20,5 +23,9 @@ public class Arrays {
 	public static final <T> T[] toArray(Class<T> c, List<T> list) {
 		T[] arr = (T[]) Array.newInstance(c, list.size());
 		return list.toArray(arr);
+	}
+
+	public static final Class<?> getListType(Type listField) {
+		return GenericTypes.getFirstGenericType(listField);
 	}
 }
