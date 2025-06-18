@@ -35,6 +35,10 @@ public class GenericTypes {
 			return result[0];
 		}
 
+		public Class<?> type(int idx) {
+			return result[idx];
+		}
+
 		public Class<?>[] upperBounds() {
 			if (type == EntryType.UPPER_BOUNDS)
 				return result;
@@ -129,6 +133,13 @@ public class GenericTypes {
 		return classes(f.getGenericType(), indices);
 	}
 
+	/**
+	 * 获取指定嵌套深度索引的泛型参数
+	 * 
+	 * @param currentType
+	 * @param indices
+	 * @return
+	 */
 	public static Type type(Type currentType, int... indices) {
 		Type[] actualTypeArguments = null;
 		for (int nest_depth = 0; nest_depth < indices.length; ++nest_depth) {

@@ -194,19 +194,57 @@ public class KlassWalker {
 		/**
 		 * 遍历每个方法，处理的是root原对象，即反射缓存的对象。
 		 * 
-		 * @param f
+		 * @param m
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(Method f, boolean isStatic);
+		public boolean operate(Method m, boolean isStatic, Object obj);
+	}
+
+	@FunctionalInterface
+	public static interface AnnotatedMethodOperation<T extends Annotation> {
+		/**
+		 * 遍历每个具有某注解的字段
+		 * 
+		 * @param m
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 */
+		public boolean operate(Method m, boolean isStatic, Object obj, T annotation);
 	}
 
 	public static void walkMethods(Class<?> cls, MethodOperation op) {
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		for (Method m : methods) {
-			if (!op.operate(m, Modifier.isStatic(m.getModifiers())))
+			if (!op.operate(m, Modifier.isStatic(m.getModifiers()), null))
 				return;
 		}
+	}
+
+	public static void walkMethods(Object obj, MethodOperation op) {
+		Method[] methods = Reflection.getDeclaredMethods(obj.getClass());
+		for (Method m : methods) {
+			if (!op.operate(m, Modifier.isStatic(m.getModifiers()), obj))
+				return;
+		}
+	}
+
+	public static <T extends Annotation> void walkAnnotatedMethods(Class<?> cls, Class<T> annotationCls, AnnotatedMethodOperation<T> op) {
+		walkMethods(cls, (Method m, boolean isStatic, Object obj) -> {
+			T annotation = m.getAnnotation(annotationCls);
+			if (annotation != null)
+				return op.operate(m, isStatic, obj, annotation);
+			return true;
+		});
+	}
+
+	public static <T extends Annotation> void walkAnnotatedMethods(Object o, Class<T> annotationCls, AnnotatedMethodOperation<T> op) {
+		walkMethods(o, (Method m, boolean isStatic, Object obj) -> {
+			T annotation = m.getAnnotation(annotationCls);
+			if (annotation != null)
+				return op.operate(m, isStatic, obj, annotation);
+			return true;
+		});
 	}
 
 	@FunctionalInterface
@@ -214,11 +252,11 @@ public class KlassWalker {
 		/**
 		 * 遍历每个构造函数，处理的是root原对象，即反射缓存的对象。
 		 * 
-		 * @param f
+		 * @param c
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(Constructor<?> f, boolean isStatic);
+		public boolean operate(Constructor<?> c, boolean isStatic);
 	}
 
 	public static void walkConstructors(Class<?> cls, ConstructorOperation op) {
@@ -234,11 +272,11 @@ public class KlassWalker {
 		/**
 		 * 遍历每个方法或构造函数，处理的是root原对象，即反射缓存的对象。
 		 * 
-		 * @param f
+		 * @param e
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(Executable f, boolean isStatic);
+		public boolean operate(Executable e, boolean isStatic);
 	}
 
 	public static void walkExecutables(Class<?> cls, ExecutableOperation op) {
@@ -259,7 +297,7 @@ public class KlassWalker {
 		/**
 		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
 		 * 
-		 * @param f
+		 * @param ao
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
