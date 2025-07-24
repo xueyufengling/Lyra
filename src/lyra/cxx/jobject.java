@@ -48,7 +48,7 @@ public abstract class jobject {
 	 * @param args
 	 * @return
 	 */
-	public static final Object placement_new(Object jobject, Class<?>[] arg_types, Object... args) {
+	public static final <T> T placement_new(T jobject, Class<?>[] arg_types, Object... args) {
 		Class<?> target_type = jobject.getClass();
 		MethodHandle constructor = Callable.invokeVirtualConstructor(target_type, arg_types);
 		try {
@@ -60,9 +60,10 @@ public abstract class jobject {
 		return jobject;
 	}
 
-	public static final Object copy(Object jobject) {
-		Class<?> clazz = jobject.getClass();
-		Object o = InternalUnsafe.allocateInstance(clazz);
+	@SuppressWarnings("unchecked")
+	public static final <T> T copy(T jobject) {
+		Class<T> clazz = (Class<T>) jobject.getClass();
+		T o = InternalUnsafe.allocateInstance(clazz);
 		InternalUnsafe.copyMemory0(jobject, markWord.HEADER_BYTE_LENGTH, o, markWord.HEADER_BYTE_LENGTH, jtype.sizeof_object(clazz) - markWord.HEADER_BYTE_LENGTH);// 只拷贝字段，不覆盖对象头
 		return o;
 	}
