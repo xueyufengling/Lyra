@@ -578,6 +578,15 @@ public final class InternalUnsafe {
 			putReference(obj, objectFieldOffset(obj.getClass(), field), value);
 	}
 
+	public static void putMemberObject(Object obj, String field, Object value) {
+		putReference(obj, objectFieldOffset(obj.getClass(), field), value);
+	}
+
+	public static void putStaticObject(Class<?> cls, String field, Object value) {
+		Field f = Reflection.getField(cls, field);
+		putReference(staticFieldBase(f), staticFieldOffset(f), value);
+	}
+
 	public static Object getObject(Object obj, Field field) {
 		if (Modifier.isStatic(field.getModifiers()))
 			return getReference(staticFieldBase(field), staticFieldOffset(field));
@@ -591,6 +600,15 @@ public final class InternalUnsafe {
 			return getReference(staticFieldBase(f), staticFieldOffset(f));
 		else
 			return getReference(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
+	public static Object getMemberObject(Object obj, String field) {
+		return getReference(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
+	public static Object getStaticObject(Class<?> cls, String field) {
+		Field f = Reflection.getField(cls, field);
+		return getReference(staticFieldBase(f), staticFieldOffset(f));
 	}
 
 	public static void putLong(Object obj, Field field, long value) {
@@ -654,6 +672,15 @@ public final class InternalUnsafe {
 
 	public static void putInt(Object obj, String field, int value) {
 		putInt(obj, Reflection.getField(obj, field), value);
+	}
+
+	public static void putMemberInt(Object obj, String field, int value) {
+		putInt(obj, objectFieldOffset(obj.getClass(), field), value);
+	}
+
+	public static void putStaticInt(Class<?> cls, String field, int value) {
+		Field f = Reflection.getField(cls, field);
+		putInt(staticFieldBase(f), staticFieldOffset(f), value);
 	}
 
 	public static int getInt(Object obj, Field field) {

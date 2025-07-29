@@ -14,14 +14,14 @@ import lyra.object.ObjectManipulator;
  * 
  * @param <Def>
  */
-public interface BaseClass<Def extends BaseClass.Definition<?>> {
+public interface BaseClass<Def extends BaseClass.Definition<? extends BaseClass<?>>> {
 	/**
 	 * 接口内部类都是隐式public static嵌套类<br>
 	 * 接口字段定义父类
 	 * 
 	 * @param <Derived>
 	 */
-	abstract class Definition<Derived extends BaseClass<?>> {
+	abstract class Definition<Derived extends BaseClass<? extends Definition<?>>> {
 		/**
 		 * (derived_obj, base_type)->base_type_definition
 		 */
@@ -34,7 +34,7 @@ public interface BaseClass<Def extends BaseClass.Definition<?>> {
 		/**
 		 * 初始化对象时使用
 		 */
-		private static final HashMap<Definition<?>, BaseClass<?>> this_refs = new HashMap<>();
+		private static final HashMap<Definition<?>, BaseClass<?>> this_preinit_refs = new HashMap<>();
 
 		static {
 			this_field = Reflection.getDeclaredField(Definition.class, "this_");
@@ -42,7 +42,7 @@ public interface BaseClass<Def extends BaseClass.Definition<?>> {
 
 		@SuppressWarnings("unchecked")
 		protected Definition() {
-			this_ = (Derived) this_refs.remove(this);
+			this_ = (Derived) this_preinit_refs.remove(this);// 在执行子类构造函数之前先设置好子类的this_引用
 		}
 
 		/**
@@ -52,7 +52,7 @@ public interface BaseClass<Def extends BaseClass.Definition<?>> {
 		 * @return
 		 */
 		@SuppressWarnings({ "rawtypes" })
-		public final Definition move(BaseClass obj) {
+		public final Definition move(Derived obj) {
 			Class<?> base_type = this.getClass();
 			if (this_ != null) {
 				HashMap<Class<?>, Object> orig_base_defs = Definition.definitions.computeIfAbsent(this_, (BaseClass) -> new HashMap<>());
@@ -67,7 +67,7 @@ public interface BaseClass<Def extends BaseClass.Definition<?>> {
 
 	default Def construct(Class<Def> base_type, Class<?>[] arg_types, Object... args) {
 		Def def = InternalUnsafe.allocateInstance(base_type);// 先分配对象内存
-		Definition.this_refs.put(def, this);// 为目标对象指定this_引用
+		Definition.this_preinit_refs.put(def, this);// 为目标对象指定this_引用
 		try {
 			def = jobject.placement_new(def, arg_types, args);// 调用目标构造函数
 		} catch (Throwable ex) {
@@ -75,6 +75,11 @@ public interface BaseClass<Def extends BaseClass.Definition<?>> {
 		}
 		Definition.definitions.computeIfAbsent(this, (BaseClass) -> new HashMap<>()).put(base_type, def);
 		return def;
+	}
+
+	@SuppressWarnings("unchecked")
+	default Def construct(Object base_type, Class<?>[] arg_types, Object... args) {
+		return construct((Class<Def>) base_type, arg_types, args);
 	}
 
 	/**

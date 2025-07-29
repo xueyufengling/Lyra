@@ -107,102 +107,101 @@ public abstract class ObjectManipulator {
 	 * @param obj   要修改值的对象
 	 * @param field 要修改的Field
 	 * @param value 要修改的值
-	 * @return
 	 */
-	public static boolean setObject(Object obj, Field field, Object value) {
-		if (field == null)
-			return false;
+	public static void setObject(Object obj, Field field, Object value) {
 		InternalUnsafe.putObject(obj, field, value);
-		return true;
 	}
 
-	public static boolean setObject(Object obj, String field, Object value) {
-		return setObject(obj, Reflection.getField(obj, field), value);
+	public static void setObject(Object obj, String field, Object value) {
+		InternalUnsafe.putObject(obj, field, value);
+	}
+
+	public static void setMemberObject(Object obj, String field, Object value) {
+		InternalUnsafe.putMemberObject(obj, field, value);
+	}
+
+	public static void setStaticObject(Class<?> cls, String field, Object value) {
+		InternalUnsafe.putStaticObject(cls, field, value);
 	}
 
 	public static Object getObject(Object obj, Field field) {
-		if (field == null)
-			return false;
 		return InternalUnsafe.getObject(obj, field);
 	}
 
 	public static Object getObject(Object obj, String field) {
-		return getObject(obj, Reflection.getField(obj, field));
+		return InternalUnsafe.getObject(obj, field);
 	}
 
-	public static boolean setLong(Object obj, Field field, long value) {
-		if (field == null)
-			return false;
+	public static Object getMemberObject(Object obj, String field) {
+		return InternalUnsafe.getMemberObject(obj, field);
+	}
+
+	public static Object getStaticObject(Class<?> cls, String field) {
+		return InternalUnsafe.getStaticObject(cls, field);
+	}
+
+	public static void setLong(Object obj, Field field, long value) {
 		InternalUnsafe.putLong(obj, field, value);
-		return true;
 	}
 
-	public static boolean setLong(Object obj, String field, long value) {
-		return setLong(obj, Reflection.getField(obj, field), value);
+	public static void setLong(Object obj, String field, long value) {
+		InternalUnsafe.putLong(obj, field, value);
 	}
 
 	public static Object getLong(Object obj, Field field) {
-		if (field == null)
-			return false;
 		return InternalUnsafe.getLong(obj, field);
 	}
 
 	public static Object getLong(Object obj, String field) {
-		return getLong(obj, Reflection.getField(obj, field));
+		return InternalUnsafe.getLong(obj, field);
 	}
 
-	public static boolean setBoolean(Object obj, Field field, boolean value) {
-		if (field == null)
-			return false;
+	public static void setBoolean(Object obj, Field field, boolean value) {
 		InternalUnsafe.putBoolean(obj, field, value);
-		return true;
 	}
 
-	public static boolean setBoolean(Object obj, String field, boolean value) {
-		return setBoolean(obj, Reflection.getField(obj, field), value);
+	public static void setBoolean(Object obj, String field, boolean value) {
+		InternalUnsafe.putBoolean(obj, field, value);
 	}
 
-	public static boolean setInt(Object obj, Field field, int value) {
-		if (field == null)
-			return false;
+	public static void setInt(Object obj, Field field, int value) {
 		InternalUnsafe.putInt(obj, field, value);
-		return true;
 	}
 
-	public static boolean setInt(Object obj, String field, int value) {
-		return setInt(obj, Reflection.getField(obj, field), value);
+	public static void setInt(Object obj, String field, int value) {
+		InternalUnsafe.putInt(obj, field, value);
+	}
+
+	public static void setMemberInt(Object obj, String field, int value) {
+		InternalUnsafe.putMemberInt(obj, field, value);
+	}
+
+	public static void setStaticInt(Class<?> cls, String field, int value) {
+		InternalUnsafe.putStaticInt(cls, field, value);
 	}
 
 	public static Object getInt(Object obj, Field field) {
-		if (field == null)
-			return false;
 		return InternalUnsafe.getInt(obj, field);
 	}
 
 	public static Object getInt(Object obj, String field) {
-		return getInt(obj, Reflection.getField(obj, field));
+		return InternalUnsafe.getInt(obj, field);
 	}
 
-	public static boolean setDouble(Object obj, Field field, double value) {
-		if (field == null)
-			return false;
+	public static void setDouble(Object obj, Field field, double value) {
 		InternalUnsafe.putDouble(obj, field, value);
-		return true;
 	}
 
-	public static boolean setDouble(Object obj, String field, double value) {
-		return setDouble(obj, Reflection.getField(obj, field), value);
+	public static void setDouble(Object obj, String field, double value) {
+		InternalUnsafe.putDouble(obj, field, value);
 	}
 
-	public static boolean setFloat(Object obj, Field field, float value) {
-		if (field == null)
-			return false;
+	public static void setFloat(Object obj, Field field, float value) {
 		InternalUnsafe.putFloat(obj, field, value);
-		return true;
 	}
 
-	public static boolean setFloat(Object obj, String field, float value) {
-		return setFloat(obj, Reflection.getField(obj, field), value);
+	public static void setFloat(Object obj, String field, float value) {
+		InternalUnsafe.putFloat(obj, field, value);
 	}
 
 	public static final Object cast(Object obj, long castTypeKlassWord) {
