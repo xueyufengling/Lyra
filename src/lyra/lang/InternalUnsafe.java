@@ -176,6 +176,9 @@ public final class InternalUnsafe {
 		return HandleBase.UNREACHABLE_LONG;
 	}
 
+	/**
+	 * 获取目标类本身声明的字段的偏移量，其继承的字段偏移量无法获取
+	 */
 	public static long objectFieldOffset(Class<?> cls, String field_name) {
 		try {
 			return (long) objectFieldOffset$Class$String.invoke(internalUnsafe, cls, field_name);
@@ -575,10 +578,10 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			putReference(staticFieldBase(f), staticFieldOffset(f), value);
 		else
-			putReference(obj, objectFieldOffset(obj.getClass(), field), value);
+			putReference(obj, objectFieldOffset(f), value);
 	}
 
-	public static void putMemberObject(Object obj, String field, Object value) {
+	public static void putDeclaredMemberObject(Object obj, String field, Object value) {
 		putReference(obj, objectFieldOffset(obj.getClass(), field), value);
 	}
 
@@ -599,10 +602,10 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			return getReference(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return getReference(obj, objectFieldOffset(obj.getClass(), field));
+			return getReference(obj, objectFieldOffset(f));
 	}
 
-	public static Object getMemberObject(Object obj, String field) {
+	public static Object getDeclaredMemberObject(Object obj, String field) {
 		return getReference(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
@@ -634,7 +637,7 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			return getLong(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return getLong(obj, objectFieldOffset(obj.getClass(), field));
+			return getLong(obj, objectFieldOffset(f));
 	}
 
 	public static void putBoolean(Object obj, Field field, boolean value) {
@@ -646,6 +649,15 @@ public final class InternalUnsafe {
 
 	public static void putBoolean(Object obj, String field, boolean value) {
 		putBoolean(obj, Reflection.getField(obj, field), value);
+	}
+
+	public static void putDeclaredMemberBoolean(Object obj, String field, boolean value) {
+		putBoolean(obj, objectFieldOffset(obj.getClass(), field), value);
+	}
+
+	public static void putStaticBoolean(Class<?> cls, String field, boolean value) {
+		Field f = Reflection.getField(cls, field);
+		putBoolean(staticFieldBase(f), staticFieldOffset(f), value);
 	}
 
 	public static boolean getBoolean(Object obj, Field field) {
@@ -660,7 +672,16 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			return getBoolean(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return getBoolean(obj, objectFieldOffset(obj.getClass(), field));
+			return getBoolean(obj, objectFieldOffset(f));
+	}
+
+	public static boolean getDeclaredMemberBoolean(Object obj, String field) {
+		return getBoolean(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
+	public static boolean getStaticBoolean(Class<?> cls, String field) {
+		Field f = Reflection.getField(cls, field);
+		return getBoolean(staticFieldBase(f), staticFieldOffset(f));
 	}
 
 	public static void putInt(Object obj, Field field, int value) {
@@ -674,7 +695,7 @@ public final class InternalUnsafe {
 		putInt(obj, Reflection.getField(obj, field), value);
 	}
 
-	public static void putMemberInt(Object obj, String field, int value) {
+	public static void putDeclaredMemberInt(Object obj, String field, int value) {
 		putInt(obj, objectFieldOffset(obj.getClass(), field), value);
 	}
 
@@ -695,7 +716,7 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			return getInt(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return getInt(obj, objectFieldOffset(obj.getClass(), field));
+			return getInt(obj, objectFieldOffset(f));
 	}
 
 	public static void putDouble(Object obj, Field field, double value) {
@@ -721,7 +742,7 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			return getDouble(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return getDouble(obj, objectFieldOffset(obj.getClass(), field));
+			return getDouble(obj, objectFieldOffset(f));
 	}
 
 	public static void putFloat(Object obj, Field field, float value) {
@@ -747,7 +768,7 @@ public final class InternalUnsafe {
 		if (Modifier.isStatic(f.getModifiers()))
 			return getFloat(staticFieldBase(f), staticFieldOffset(f));
 		else
-			return getFloat(obj, objectFieldOffset(obj.getClass(), field));
+			return getFloat(obj, objectFieldOffset(f));
 	}
 
 	/**

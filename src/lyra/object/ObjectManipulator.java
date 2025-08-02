@@ -116,8 +116,8 @@ public abstract class ObjectManipulator {
 		InternalUnsafe.putObject(obj, field, value);
 	}
 
-	public static void setMemberObject(Object obj, String field, Object value) {
-		InternalUnsafe.putMemberObject(obj, field, value);
+	public static void setDeclaredMemberObject(Object obj, String field, Object value) {
+		InternalUnsafe.putDeclaredMemberObject(obj, field, value);
 	}
 
 	public static void setStaticObject(Class<?> cls, String field, Object value) {
@@ -132,8 +132,8 @@ public abstract class ObjectManipulator {
 		return InternalUnsafe.getObject(obj, field);
 	}
 
-	public static Object getMemberObject(Object obj, String field) {
-		return InternalUnsafe.getMemberObject(obj, field);
+	public static Object getDeclaredMemberObject(Object obj, String field) {
+		return InternalUnsafe.getDeclaredMemberObject(obj, field);
 	}
 
 	public static Object getStaticObject(Class<?> cls, String field) {
@@ -164,6 +164,22 @@ public abstract class ObjectManipulator {
 		InternalUnsafe.putBoolean(obj, field, value);
 	}
 
+	public static void setDeclaredMemberBoolean(Object obj, String field, boolean value) {
+		InternalUnsafe.putDeclaredMemberBoolean(obj, field, value);
+	}
+
+	public static void setStaticBoolean(Class<?> cls, String field, boolean value) {
+		InternalUnsafe.putStaticBoolean(cls, field, value);
+	}
+
+	public static boolean getDeclaredMemberBoolean(Object obj, String field) {
+		return InternalUnsafe.getDeclaredMemberBoolean(obj, field);
+	}
+
+	public static boolean getStaticBoolean(Class<?> cls, String field) {
+		return InternalUnsafe.getStaticBoolean(cls, field);
+	}
+
 	public static void setInt(Object obj, Field field, int value) {
 		InternalUnsafe.putInt(obj, field, value);
 	}
@@ -172,8 +188,8 @@ public abstract class ObjectManipulator {
 		InternalUnsafe.putInt(obj, field, value);
 	}
 
-	public static void setMemberInt(Object obj, String field, int value) {
-		InternalUnsafe.putMemberInt(obj, field, value);
+	public static void setDeclaredMemberInt(Object obj, String field, int value) {
+		InternalUnsafe.putDeclaredMemberInt(obj, field, value);
 	}
 
 	public static void setStaticInt(Class<?> cls, String field, int value) {
