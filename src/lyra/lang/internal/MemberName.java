@@ -384,4 +384,23 @@ public class MemberName {
 	public static final Object allocate(Class<?> defClass, String name, Object type, int flags) {
 		return init(InternalUnsafe.allocateInstance(java_lang_invoke_MemberName), defClass, name, type, flags);
 	}
+
+	/**
+	 * 构造函数类型
+	 * 
+	 * @param targetClass
+	 * @param arg_types
+	 * @return
+	 */
+	public static String constructorDescription(Class<?> targetClass, Class<?>[] arg_types) {
+		StringBuilder result = new StringBuilder();
+		result.append(targetClass.getName()).append("(");
+		for (int i = 0; i < arg_types.length; ++i) {
+			result.append(arg_types[i].getName());
+			if (i != arg_types.length)
+				result.append(", ");
+		}
+		result.append(")");
+		return result.toString();
+	}
 }

@@ -34,7 +34,7 @@ public interface MutableEnum<T extends Enum<T>> extends CRTP<T> {
 	public static <T extends Enum<T>> T of(Class<T> targetEnum, String name, int ordinal, Class<?>[] arg_types, Object... args) {
 		MethodHandle constructor = HandleBase.findConstructor(targetEnum, enumConstructorArgTypes(arg_types));
 		try {
-			return (T) constructor.invokeWithArguments(Arrays.cat(new Object[] { name, ordinal }, args));
+			return (T) constructor.invokeWithArguments(Arrays.cat(name, ordinal, args));
 		} catch (Throwable ex) {
 			System.err.println("Create enum instance failed.");
 			ex.printStackTrace();
@@ -55,11 +55,7 @@ public interface MutableEnum<T extends Enum<T>> extends CRTP<T> {
 	 * @return
 	 */
 	public static Class<?>[] enumConstructorArgTypes(Class<?>... ctor_arg_types) {
-		Class<?>[] actualArgTypes = new Class[ctor_arg_types.length + 2];
-		actualArgTypes[0] = String.class;
-		actualArgTypes[1] = int.class;
-		System.arraycopy(ctor_arg_types, 0, actualArgTypes, 2, ctor_arg_types.length);
-		return actualArgTypes;
+		return Arrays.cat(String.class, int.class, ctor_arg_types);
 	}
 
 	/**
