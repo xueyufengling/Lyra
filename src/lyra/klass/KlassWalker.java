@@ -16,6 +16,9 @@ import lyra.object.ObjectManipulator;
  * 提供原始Field、Method、Constructor等，对其进行修改会导致反射获取到的所有副本都被修改
  */
 public class KlassWalker {
+	/**
+	 * 字段操作不可限定泛型，这是因为欲访问的字段实际类型不一定是期望的类型，此时如果强制使用泛型限定，则会在强制转换时报错。
+	 */
 	@FunctionalInterface
 	public static interface FieldOperation {
 		/**
@@ -190,30 +193,30 @@ public class KlassWalker {
 	}
 
 	@FunctionalInterface
-	public static interface MethodOperation {
+	public static interface MethodOperation<M> {
 		/**
 		 * 遍历每个方法，处理的是root原对象，即反射缓存的对象。
 		 * 
 		 * @param m
 		 * @param isStatic 目标字段是否是静态的
-		 * @param value    字段值，无效则为null
+		 * @param value    方法所属对象实例，静态方法则为null
 		 */
-		public boolean operate(Method m, boolean isStatic, Object obj);
+		public boolean operate(Method m, boolean isStatic, M obj);
 	}
 
 	@FunctionalInterface
-	public static interface AnnotatedMethodOperation<T extends Annotation> {
+	public static interface AnnotatedMethodOperation<M, T extends Annotation> {
 		/**
-		 * 遍历每个具有某注解的字段
+		 * 遍历每个具有某注解的方法
 		 * 
 		 * @param m
 		 * @param isStatic 目标字段是否是静态的
-		 * @param value    字段值，无效则为null
+		 * @param value    方法所属对象实例，静态方法则为null
 		 */
-		public boolean operate(Method m, boolean isStatic, Object obj, T annotation);
+		public boolean operate(Method m, boolean isStatic, M obj, T annotation);
 	}
 
-	public static void walkMethods(Class<?> cls, MethodOperation op) {
+	public static <M> void walkMethods(Class<M> cls, MethodOperation<M> op) {
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		for (Method m : methods) {
 			if (!op.operate(m, Modifier.isStatic(m.getModifiers()), null))
@@ -221,7 +224,7 @@ public class KlassWalker {
 		}
 	}
 
-	public static void walkMethods(Object obj, MethodOperation op) {
+	public static <M> void walkMethods(M obj, MethodOperation<M> op) {
 		Method[] methods = Reflection.getDeclaredMethods(obj.getClass());
 		for (Method m : methods) {
 			if (!op.operate(m, Modifier.isStatic(m.getModifiers()), obj))
@@ -229,8 +232,8 @@ public class KlassWalker {
 		}
 	}
 
-	public static <T extends Annotation> void walkAnnotatedMethods(Class<?> cls, Class<T> annotationCls, AnnotatedMethodOperation<T> op) {
-		walkMethods(cls, (Method m, boolean isStatic, Object obj) -> {
+	public static <M, T extends Annotation> void walkAnnotatedMethods(Class<M> cls, Class<T> annotationCls, AnnotatedMethodOperation<M, T> op) {
+		walkMethods(cls, (Method m, boolean isStatic, M obj) -> {
 			T annotation = m.getAnnotation(annotationCls);
 			if (annotation != null)
 				return op.operate(m, isStatic, obj, annotation);
@@ -238,8 +241,8 @@ public class KlassWalker {
 		});
 	}
 
-	public static <T extends Annotation> void walkAnnotatedMethods(Object o, Class<T> annotationCls, AnnotatedMethodOperation<T> op) {
-		walkMethods(o, (Method m, boolean isStatic, Object obj) -> {
+	public static <M, T extends Annotation> void walkAnnotatedMethods(M o, Class<T> annotationCls, AnnotatedMethodOperation<M, T> op) {
+		walkMethods(o, (Method m, boolean isStatic, M obj) -> {
 			T annotation = m.getAnnotation(annotationCls);
 			if (annotation != null)
 				return op.operate(m, isStatic, obj, annotation);
@@ -248,23 +251,41 @@ public class KlassWalker {
 	}
 
 	@FunctionalInterface
-	public static interface ConstructorOperation {
+	public static interface ConstructorOperation<C> {
 		/**
 		 * 遍历每个构造函数，处理的是root原对象，即反射缓存的对象。
 		 * 
 		 * @param c
-		 * @param isStatic 目标字段是否是静态的
-		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(Constructor<?> c, boolean isStatic);
+		public boolean operate(Constructor<C> c);
 	}
 
-	public static void walkConstructors(Class<?> cls, ConstructorOperation op) {
-		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
-		for (Constructor<?> c : constructors) {
-			if (!op.operate(c, Modifier.isStatic(c.getModifiers())))
+	@FunctionalInterface
+	public static interface AnnotatedConstructorOperation<C, T extends Annotation> {
+		/**
+		 * 遍历每个具有某注解的构造函数
+		 * 
+		 * @param c
+		 * @param annotation
+		 */
+		public boolean operate(Constructor<C> c, T annotation);
+	}
+
+	public static <C> void walkConstructors(Class<C> cls, ConstructorOperation<C> op) {
+		Constructor<C>[] constructors = Reflection.getDeclaredConstructors(cls);
+		for (Constructor<C> c : constructors) {
+			if (!op.operate(c))
 				return;
 		}
+	}
+
+	public static <C, T extends Annotation> void walkAnnotatedConstructors(Class<C> cls, Class<T> annotationCls, AnnotatedConstructorOperation<C, T> op) {
+		walkConstructors(cls, (Constructor<C> c) -> {
+			T annotation = c.getAnnotation(annotationCls);
+			if (annotation != null)
+				return op.operate(c, annotation);
+			return true;
+		});
 	}
 
 	@FunctionalInterface
