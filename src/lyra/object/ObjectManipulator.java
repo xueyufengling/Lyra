@@ -56,6 +56,23 @@ public abstract class ObjectManipulator {
 		return null;
 	}
 
+	/**
+	 * 访问值，若目标字段不存在则返回默认值
+	 * 
+	 * @param obj
+	 * @param field_name
+	 * @param defaultValue
+	 * @return
+	 */
+	public static Object accessOrDefault(Object obj, String field_name, Object defaultValue) {
+		try {
+			Field field = ObjectManipulator.removeAccessCheck(Reflection.getField(obj, field_name));
+			return field.get(obj);
+		} catch (Throwable ex) {
+			return defaultValue;
+		}
+	}
+
 	public static Object access(Object obj, Field field) {
 		try {
 			return ObjectManipulator.removeAccessCheck(field).get(obj);
@@ -64,6 +81,14 @@ public abstract class ObjectManipulator {
 			ex.printStackTrace();
 		}
 		return null;
+	}
+
+	public static Object accessOrDefault(Object obj, Field field, Object defaultValue) {
+		try {
+			return ObjectManipulator.removeAccessCheck(field).get(obj);
+		} catch (Throwable ex) {
+			return defaultValue;
+		}
 	}
 
 	/**

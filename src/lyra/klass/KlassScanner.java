@@ -47,7 +47,7 @@ public class KlassScanner {
 				if (filter.condition(cls))
 					annotated.add(cls);
 			}
-			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic) -> {
+			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic, Object obj) -> {
 				if (ao.getAnnotations().length > 0) {
 					if (filter.condition(ao))
 						annotated.add(ao);
@@ -79,7 +79,7 @@ public class KlassScanner {
 				if (filter.condition(cls))// 不满足条件的AnnotatedElement不放入结果
 					annotated.add(cls);
 			}
-			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic) -> {
+			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic, Object obj) -> {
 				if (ao.isAnnotationPresent(annotationCls)) {
 					if (filter.condition(ao))
 						annotated.add(ao);
@@ -103,7 +103,7 @@ public class KlassScanner {
 				continue;
 			if (cls.isAnnotationPresent(annotationCls))
 				annotated.add(cls);
-			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic) -> {
+			KlassWalker.walkAccessibleObjects(cls, (AccessibleObject ao, boolean isStatic, Object obj) -> {
 				if (ao.isAnnotationPresent(annotationCls))
 					annotated.add(ao);
 				return true;

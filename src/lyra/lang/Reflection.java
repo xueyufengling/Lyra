@@ -277,8 +277,7 @@ public abstract class Reflection extends ReflectionBase {
 		if (result == null) {
 			Class<?> supercls = cls.getSuperclass();
 			if (supercls == null) {
-				System.err.println("Cannot find field " + name);
-				return null;
+				throw new IllegalArgumentException("Cannot find field " + name + " in " + obj);
 			} else
 				return getField(supercls, name);
 		}
@@ -292,7 +291,7 @@ public abstract class Reflection extends ReflectionBase {
 			ReflectionBase.setAccessible(field, true);
 			return field.get(obj);
 		} catch (IllegalAccessException ex) {
-			System.err.println("Reflection throws IllegalAccessException reading field " + field);
+			System.err.println("Reflection throws IllegalAccessException reading field " + field + " in " + obj);
 			ex.printStackTrace();
 		}
 		return null;
@@ -309,7 +308,7 @@ public abstract class Reflection extends ReflectionBase {
 			ReflectionBase.setAccessible(field, true);
 			field.set(obj, value);
 		} catch (IllegalAccessException ex) {
-			System.err.println("Reflection throws IllegalAccessException writing field " + field + " with value " + value + " in object " + obj.toString());
+			System.err.println("Reflection throws IllegalAccessException writing field " + field + " with value " + value + " in " + obj);
 			ex.printStackTrace();
 			;
 			return false;

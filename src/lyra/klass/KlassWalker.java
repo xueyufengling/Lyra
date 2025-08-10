@@ -20,7 +20,7 @@ public class KlassWalker {
 	 * 字段操作不可限定泛型，这是因为欲访问的字段实际类型不一定是期望的类型，此时如果强制使用泛型限定，则会在强制转换时报错。
 	 */
 	@FunctionalInterface
-	public static interface FieldOperation {
+	public static interface FieldOperation<F> {
 		/**
 		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
 		 * 
@@ -29,11 +29,11 @@ public class KlassWalker {
 		 * @param value    字段值，无效则为null
 		 * @return 是否继续迭代，返回true代表继续迭代，false则终止迭代
 		 */
-		public boolean operate(Field f, boolean isStatic, Object value);
+		public boolean operate(Field f, boolean isStatic, F value);
 	}
 
 	@FunctionalInterface
-	public static interface SimpleFieldOperation {
+	public static interface SimpleFieldOperation<F> {
 		/**
 		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
 		 * 
@@ -41,52 +41,46 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(String field_name, Class<?> field_type, boolean isStatic, Object value);
+		public boolean operate(String field_name, Class<?> field_type, boolean isStatic, F value);
 	}
 
 	/**
-	 * 字段如果是静态的，则op()中形参value为字段值；如果是非静态字段则传入null
-	 * 
-	 * @param cls
-	 * @param op
-	 */
-	public static void walkFields(Class<?> cls, FieldOperation op) {
-		Field[] fields = Reflection.getDeclaredFields(cls);
-		for (Field f : fields) {
-			boolean isStatic = Modifier.isStatic(f.getModifiers());
-			if (!op.operate(f, isStatic, isStatic ? ObjectManipulator.access(cls, f) : null))
-				return;
-		}
-	}
-
-	public static void walkFields(Class<?> cls, SimpleFieldOperation op) {
-		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
-			return op.operate(f.getName(), f.getType(), isStatic, value);
-		});
-	}
-
-	/**
-	 * op()中形参value为字段值
+	 * op()中形参value为字段值<br>
+	 * 字段如果是静态的，则传入值；如果是非静态字段则传入target的该字段值（若target为Class<?>则表示无对象，传入null）
 	 * 
 	 * @param obj
 	 * @param op
 	 */
-	public static void walkFields(Object obj, FieldOperation op) {
-		Field[] fields = Reflection.getDeclaredFields(obj.getClass());
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <F> void walkFields(Object target, FieldOperation<F> op) {
+		Class<?> cls;
+		Object obj;
+		if (target instanceof Class c) {
+			cls = c;
+			obj = null;
+		} else {
+			cls = target.getClass();
+			obj = target;
+		}
+		Field[] fields = Reflection.getDeclaredFields(cls);
+		FieldOperation rop = (FieldOperation) op;
 		for (Field f : fields) {
-			if (!op.operate(f, Modifier.isStatic(f.getModifiers()), ObjectManipulator.access(obj, f)))
+			boolean isStatic = Modifier.isStatic(f.getModifiers());
+			if (!rop.operate(f, isStatic, isStatic ? ObjectManipulator.access(cls, f) : (obj == null ? null : ObjectManipulator.access(obj, f))))
 				return;
 		}
 	}
 
-	public static void walkFields(Object obj, SimpleFieldOperation op) {
-		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
-			return op.operate(f.getName(), f.getType(), isStatic, value);
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static <F> void walkFields(Object target, SimpleFieldOperation<F> op) {
+		SimpleFieldOperation rop = (SimpleFieldOperation) op;
+		walkFields(target, (Field f, boolean isStatic, Object value) -> {
+			return rop.operate(f.getName(), f.getType(), isStatic, value);
 		});
 	}
 
 	@FunctionalInterface
-	public static interface AnnotatedFieldOperation<T extends Annotation> {
+	public static interface AnnotatedFieldOperation<F, T extends Annotation> {
 		/**
 		 * 遍历每个具有某注解的字段
 		 * 
@@ -94,11 +88,11 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(Field f, boolean isStatic, Object value, T annotation);
+		public boolean operate(Field f, boolean isStatic, F value, T annotation);
 	}
 
 	@FunctionalInterface
-	public static interface SimpleAnnotatedFieldOperation<T extends Annotation> {
+	public static interface SimpleAnnotatedFieldOperation<F, T extends Annotation> {
 		/**
 		 * 遍历每个具有某注解的字段
 		 * 
@@ -106,7 +100,7 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(String field_name, Class<?> field_type, boolean isStatic, Object value, T annotation);
+		public boolean operate(String field_name, Class<?> field_type, boolean isStatic, F value, T annotation);
 	}
 
 	/**
@@ -116,46 +110,23 @@ public class KlassWalker {
 	 * @param annotation
 	 * @param op
 	 */
-	public static <T extends Annotation> void walkAnnotatedFields(Class<?> cls, Class<T> annotationCls, AnnotatedFieldOperation<T> op) {
-		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <F, T extends Annotation> void walkAnnotatedFields(Object target, Class<T> annotationCls, AnnotatedFieldOperation<F, T> op) {
+		AnnotatedFieldOperation rop = (AnnotatedFieldOperation) op;
+		walkFields(target, (Field f, boolean isStatic, Object value) -> {
 			T annotation = f.getAnnotation(annotationCls);
 			if (annotation != null)
-				return op.operate(f, isStatic, value, annotation);
+				return rop.operate(f, isStatic, value, annotation);
 			return true;
 		});
 	}
 
-	public static <T extends Annotation> void walkAnnotatedFields(Class<?> cls, Class<T> annotationCls, SimpleAnnotatedFieldOperation<T> op) {
-		walkAnnotatedFields(cls, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
-			return op.operate(f.getName(), f.getType(), isStatic, value, annotation);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <F, T extends Annotation> void walkAnnotatedFields(Object target, Class<T> annotationCls, SimpleAnnotatedFieldOperation<F, T> op) {
+		SimpleAnnotatedFieldOperation rop = (SimpleAnnotatedFieldOperation) op;
+		walkAnnotatedFields(target, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
+			return rop.operate(f.getName(), f.getType(), isStatic, value, annotation);
 		});
-	}
-
-	public static <T extends Annotation> void walkAnnotatedFields(Object obj, Class<T> annotationCls, AnnotatedFieldOperation<T> op) {
-		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
-			T annotation = f.getAnnotation(annotationCls);
-			if (annotation != null)
-				return op.operate(f, isStatic, value, annotation);
-			return true;
-		});
-	}
-
-	public static <T extends Annotation> void walkAnnotatedFields(Object obj, Class<T> annotationCls, SimpleAnnotatedFieldOperation<T> op) {
-		walkAnnotatedFields(obj, annotationCls, (Field f, boolean isStatic, Object value, T annotation) -> {
-			return op.operate(f.getName(), f.getType(), isStatic, value, annotation);
-		});
-	}
-
-	@FunctionalInterface
-	public static interface TypeFieldOperation<T> {
-		/**
-		 * 遍历每个具有某注解的字段
-		 * 
-		 * @param f
-		 * @param isStatic 目标字段是否是静态的
-		 * @param value    字段值，无效则为null
-		 */
-		public boolean operate(Field f, boolean isStatic, T value);
 	}
 
 	/**
@@ -167,25 +138,8 @@ public class KlassWalker {
 	 * @param op
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> void walkTypeFields(Class<?> cls, Class<T> targetType, TypeFieldOperation<T> op) {
-		walkFields(cls, (Field f, boolean isStatic, Object value) -> {
-			if (Reflection.is(f, targetType))
-				return op.operate(f, isStatic, (T) value);
-			return true;
-		});
-	}
-
-	/**
-	 * 遍历指定对象的目标类型或其子类的字段
-	 * 
-	 * @param <T>
-	 * @param obj
-	 * @param targetType
-	 * @param op
-	 */
-	@SuppressWarnings("unchecked")
-	public static <T> void walkTypeFields(Object obj, Class<T> targetType, TypeFieldOperation<T> op) {
-		walkFields(obj, (Field f, boolean isStatic, Object value) -> {
+	public static <T> void walkTypeFields(Object target, Class<T> targetType, FieldOperation<T> op) {
+		walkFields(target, (Field f, boolean isStatic, Object value) -> {
 			if (Reflection.is(f, targetType))
 				return op.operate(f, isStatic, (T) value);
 			return true;
@@ -216,36 +170,33 @@ public class KlassWalker {
 		public boolean operate(Method m, boolean isStatic, M obj, T annotation);
 	}
 
-	public static <M> void walkMethods(Class<M> cls, MethodOperation<M> op) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <M> void walkMethods(Object target, MethodOperation<M> op) {
+		Class<?> cls;
+		Object obj;
+		if (target instanceof Class c) {
+			cls = c;
+			obj = null;
+		} else {
+			cls = target.getClass();
+			obj = target;
+		}
 		Method[] methods = Reflection.getDeclaredMethods(cls);
+		MethodOperation rop = (MethodOperation) op;
 		for (Method m : methods) {
-			if (!op.operate(m, Modifier.isStatic(m.getModifiers()), null))
+			boolean isStatic = Modifier.isStatic(m.getModifiers());
+			if (!rop.operate(m, isStatic, obj))
 				return;
 		}
 	}
 
-	public static <M> void walkMethods(M obj, MethodOperation<M> op) {
-		Method[] methods = Reflection.getDeclaredMethods(obj.getClass());
-		for (Method m : methods) {
-			if (!op.operate(m, Modifier.isStatic(m.getModifiers()), obj))
-				return;
-		}
-	}
-
-	public static <M, T extends Annotation> void walkAnnotatedMethods(Class<M> cls, Class<T> annotationCls, AnnotatedMethodOperation<M, T> op) {
-		walkMethods(cls, (Method m, boolean isStatic, M obj) -> {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <M, T extends Annotation> void walkAnnotatedMethods(Object target, Class<T> annotationCls, AnnotatedMethodOperation<M, T> op) {
+		AnnotatedMethodOperation rop = (AnnotatedMethodOperation) op;
+		walkMethods(target, (Method m, boolean isStatic, Object obj) -> {
 			T annotation = m.getAnnotation(annotationCls);
 			if (annotation != null)
-				return op.operate(m, isStatic, obj, annotation);
-			return true;
-		});
-	}
-
-	public static <M, T extends Annotation> void walkAnnotatedMethods(M o, Class<T> annotationCls, AnnotatedMethodOperation<M, T> op) {
-		walkMethods(o, (Method m, boolean isStatic, M obj) -> {
-			T annotation = m.getAnnotation(annotationCls);
-			if (annotation != null)
-				return op.operate(m, isStatic, obj, annotation);
+				return rop.operate(m, isStatic, obj, annotation);
 			return true;
 		});
 	}
@@ -289,7 +240,7 @@ public class KlassWalker {
 	}
 
 	@FunctionalInterface
-	public static interface ExecutableOperation {
+	public static interface ExecutableOperation<E> {
 		/**
 		 * 遍历每个方法或构造函数，处理的是root原对象，即反射缓存的对象。
 		 * 
@@ -297,24 +248,35 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(Executable e, boolean isStatic);
+		public boolean operate(Executable e, boolean isStatic, E obj);
 	}
 
-	public static void walkExecutables(Class<?> cls, ExecutableOperation op) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static <E> void walkExecutables(Object target, ExecutableOperation<E> op) {
+		Class<?> cls;
+		Object obj;
+		if (target instanceof Class c) {
+			cls = c;
+			obj = null;
+		} else {
+			cls = target.getClass();
+			obj = target;
+		}
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
+		ExecutableOperation rop = (ExecutableOperation) op;
 		for (Constructor<?> c : constructors) {
-			if (!op.operate(c, Modifier.isStatic(c.getModifiers())))
+			if (!rop.operate(c, Modifier.isStatic(c.getModifiers()), obj))
 				return;
 		}
 		for (Method m : methods) {
-			if (!op.operate(m, Modifier.isStatic(m.getModifiers())))
+			if (!rop.operate(m, Modifier.isStatic(m.getModifiers()), obj))
 				return;
 		}
 	}
 
 	@FunctionalInterface
-	public static interface AccessibleObjectOperation {
+	public static interface AccessibleObjectOperation<A> {
 		/**
 		 * 遍历每个字段，处理的是root原对象，即反射缓存的对象。
 		 * 
@@ -322,23 +284,34 @@ public class KlassWalker {
 		 * @param isStatic 目标字段是否是静态的
 		 * @param value    字段值，无效则为null
 		 */
-		public boolean operate(AccessibleObject ao, boolean isStatic);
+		public boolean operate(AccessibleObject ao, boolean isStatic, A obj);
 	}
 
-	public static void walkAccessibleObjects(Class<?> cls, AccessibleObjectOperation op) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static <A> void walkAccessibleObjects(Object target, AccessibleObjectOperation<A> op) {
+		Class<?> cls;
+		Object obj;
+		if (target instanceof Class c) {
+			cls = c;
+			obj = null;
+		} else {
+			cls = target.getClass();
+			obj = target;
+		}
 		Field[] fields = Reflection.getDeclaredFields(cls);
 		Method[] methods = Reflection.getDeclaredMethods(cls);
 		Constructor<?>[] constructors = Reflection.getDeclaredConstructors(cls);
+		AccessibleObjectOperation rop = (AccessibleObjectOperation) op;
 		for (Field f : fields) {
-			if (!op.operate(f, Modifier.isStatic(f.getModifiers())))
+			if (!rop.operate(f, Modifier.isStatic(f.getModifiers()), obj))
 				return;
 		}
 		for (Constructor<?> c : constructors) {
-			if (!op.operate(c, Modifier.isStatic(c.getModifiers())))
+			if (!rop.operate(c, Modifier.isStatic(c.getModifiers()), obj))
 				return;
 		}
 		for (Method m : methods) {
-			if (!op.operate(m, Modifier.isStatic(m.getModifiers())))
+			if (!rop.operate(m, Modifier.isStatic(m.getModifiers()), obj))
 				return;
 		}
 	}
