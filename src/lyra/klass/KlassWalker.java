@@ -16,9 +16,6 @@ import lyra.object.ObjectManipulator;
  * 提供原始Field、Method、Constructor等，对其进行修改会导致反射获取到的所有副本都被修改
  */
 public class KlassWalker {
-	/**
-	 * 字段操作不可限定泛型，这是因为欲访问的字段实际类型不一定是期望的类型，此时如果强制使用泛型限定，则会在强制转换时报错。
-	 */
 	@FunctionalInterface
 	public static interface FieldOperation<F> {
 		/**
@@ -142,6 +139,45 @@ public class KlassWalker {
 		walkFields(target, (Field f, boolean isStatic, Object value) -> {
 			if (Reflection.is(f, targetType))
 				return op.operate(f, isStatic, (T) value);
+			return true;
+		});
+	}
+
+	@FunctionalInterface
+	public static interface GenericFieldOperation<F> {
+		/**
+		 * 遍历具有单个泛型参数的字段
+		 * 
+		 * @param f
+		 * @param isStatic 目标字段是否是静态的
+		 * @param value    字段值，无效则为null
+		 * @return 是否继续迭代，返回true代表继续迭代，false则终止迭代
+		 */
+		public boolean operate(Field f, boolean isStatic, Class<?> genericType, F value);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static final <F> void walkGenericFields(Object target, Class<F> fieldType, GenericFieldOperation<F> op) {
+		GenericFieldOperation rop = (GenericFieldOperation) op;
+		KlassWalker.walkTypeFields(target, fieldType, (Field f, boolean isStatic, F value) -> {
+			return rop.operate(f, isStatic, GenericTypes.getFirstGenericType(f), value);
+		});
+	}
+
+	/**
+	 * 遍历target中全部第一个泛型参数为singleGenericType的fieldType类型的字段
+	 * 
+	 * @param <F>
+	 * @param target
+	 * @param fieldType
+	 * @param singleGenericType
+	 * @param op
+	 */
+	public static final <F, G> void walkGenericFields(Object target, Class<F> fieldType, Class<G> singleGenericType, FieldOperation<F> op) {
+		KlassWalker.walkGenericFields(target, fieldType, (Field f, boolean isStatic, Class<?> genericType, F value) -> {
+			if (Reflection.is(genericType, singleGenericType)) {
+				return op.operate(f, isStatic, (F) value);
+			}
 			return true;
 		});
 	}
