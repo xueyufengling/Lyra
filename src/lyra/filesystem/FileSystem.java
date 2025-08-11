@@ -60,6 +60,12 @@ public class FileSystem {
 	 * @return
 	 */
 	public static String standardizedRltPath(String path) {
+		/*
+		 * 若path为""，则不可charAt()，需要直接视作根路径返回。
+		 * 在Debug环境下可能会出现此种情况
+		 */
+		if (path == null || path.equals(""))
+			return "/";
 		char ch = path.charAt(0);// 检查开头有没有多余的路径分隔符
 		if (ch == File.separatorChar || ch == '/')
 			path = path.substring(1);
