@@ -4,7 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
 
-import lyra.klass.KlassLoader;
+import lyra.klass.Klass;
 import lyra.klass.KlassScanner;
 import lyra.lang.annotation.Annotations;
 import lyra.object.ObjectManipulator;
@@ -86,7 +86,7 @@ public interface MirrorAnnotation<MA extends Annotation, MC, D extends Annotatio
 			// 如果是系统注解，那么包含该注解的类也必须是BootstrapLoader加载的类
 			if (isDestSystemAnnotation) {
 				Class<?> includeCls = Annotations.getDeclaringClass(ae);
-				KlassLoader.setAsSystemLoaded(includeCls);
+				Klass.setAsBootstrap(includeCls);
 			}
 			Annotations.castAnnotation(ae, mirrorAnnotationClass, targetAnnotationCls, destAnnotation);
 		}

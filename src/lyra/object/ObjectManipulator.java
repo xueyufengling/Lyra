@@ -279,4 +279,5 @@ public abstract class ObjectManipulator {
 	public static final <T> T safeCast(Object obj, Class<T> castType) {
 		return (T) (Object) obj;
 	}
+
 }

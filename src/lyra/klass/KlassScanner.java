@@ -19,7 +19,7 @@ public class KlassScanner {
 		public static final Filter RESERVE_ALL = (AnnotatedElement scannedAE) -> true;
 
 		@FunctionalInterface
-		public static interface Klass {
+		public static interface KlassFilter {
 			/**
 			 * 过滤扫描到的类，只有返回true的类才被保留。
 			 * 
@@ -28,7 +28,7 @@ public class KlassScanner {
 			 */
 			public boolean condition(Class<?> scannedCls);
 
-			public static final Klass RESERVE_ALL = (Class<?> scannedCls) -> true;
+			public static final KlassFilter RESERVE_ALL = (Class<?> scannedCls) -> true;
 		}
 	}
 
@@ -94,7 +94,7 @@ public class KlassScanner {
 		return scanAnnotatedElements(loader, annotationCls, Filter.RESERVE_ALL);
 	}
 
-	public static <T extends Annotation> ArrayList<AnnotatedElement> scanAnnotatedElements(ClassLoader loader, Class<T> annotationCls, Filter.Klass filter) {
+	public static <T extends Annotation> ArrayList<AnnotatedElement> scanAnnotatedElements(ClassLoader loader, Class<T> annotationCls, Filter.KlassFilter filter) {
 		ArrayList<AnnotatedElement> annotated = new ArrayList<>();
 		ArrayList<Class<?>> classes = KlassLoader.loadedClassesCopy(loader);
 		for (Class<?> cls : classes) {
@@ -113,6 +113,6 @@ public class KlassScanner {
 	}
 
 	public static <T extends Annotation> ArrayList<AnnotatedElement> scanAnnotatedElementsFilterClass(ClassLoader loader, Class<T> annotationCls) {
-		return scanAnnotatedElements(loader, annotationCls, Filter.Klass.RESERVE_ALL);
+		return scanAnnotatedElements(loader, annotationCls, Filter.KlassFilter.RESERVE_ALL);
 	}
 }

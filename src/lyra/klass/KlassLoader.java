@@ -1,15 +1,16 @@
 package lyra.klass;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
 import lyra.filesystem.Packages;
 import lyra.filesystem.UriPath;
+import lyra.lang.DynamicConcurrentArrayList;
 import lyra.lang.Handles;
 import lyra.lang.JavaLang;
 import lyra.lang.Reflection;
@@ -18,22 +19,22 @@ import lyra.lang.internal.ReflectionBase;
 import lyra.object.ObjectManipulator;
 
 public class KlassLoader {
-	private static MethodHandle ClassLoader_m_defineClass;
-	private static MethodHandle ClassLoader_m_findClass;
+	private static MethodHandle ClassLoader_defineClass1;
+	private static MethodHandle ClassLoader_defineClass;
+	private static MethodHandle ClassLoader_findClass;
 	/**
 	 * final字段只能使用Unsafe更改，不可使用VarHandle。
 	 */
-	private static Field ClassLoader_f_parent;
-	private static Field Class_f_classLoader;
+	private static Field ClassLoader_$parent;
 
 	public static final String default_parent_field_name = "parent";
 
 	static {
 		ReflectionBase.noReflectionFieldFilter(() -> {
-			ClassLoader_m_defineClass = Handles.findSpecialMethodHandle(ClassLoader.class, "defineClass", Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class);
-			ClassLoader_m_findClass = Handles.findSpecialMethodHandle(ClassLoader.class, "findClass", Class.class, String.class);
-			ClassLoader_f_parent = Reflection.getField(ClassLoader.class, "parent");
-			Class_f_classLoader = Reflection.getField(Class.class, "classLoader");
+			ClassLoader_defineClass1 = Handles.findStaticMethodHandle(ClassLoader.class, "defineClass1", Class.class, ClassLoader.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class, String.class);
+			ClassLoader_defineClass = Handles.findSpecialMethodHandle(ClassLoader.class, "defineClass", Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class);
+			ClassLoader_findClass = Handles.findSpecialMethodHandle(ClassLoader.class, "findClass", Class.class, String.class);
+			ClassLoader_$parent = Reflection.getField(ClassLoader.class, "parent");
 		});
 	}
 
@@ -118,6 +119,16 @@ public class KlassLoader {
 		}
 	}
 
+	private static final DynamicConcurrentArrayList<Klass.Definition> classDefs = new DynamicConcurrentArrayList<>();
+
+	public static final void defineClass(Collection<Klass.Definition> defs) throws Throwable {
+		classDefs.add(defs);
+		classDefs.forEach((Klass.Definition def) -> {
+			KlassLoader.defineClass(def);
+		});
+		classDefs.clear();
+	}
+
 	/**
 	 * 将undefinedKlass委托给父类为loader的新自定义ClassLoader加载。<br>
 	 * 注意，类加载的起点始终是手动调用的Class.forName(name,init,classLoader)、classLoader.loadClass(name)或直接使用该类型，例如直接在代码中使用{@code A a=new A();}的上下文的ClassLoader。<br>
@@ -155,7 +166,7 @@ public class KlassLoader {
 	 * @return
 	 */
 	private static final Field resolveParentLoaderField(ClassLoader target, String dest_parent_field_name) {
-		return dest_parent_field_name.equals(default_parent_field_name) ? ClassLoader_f_parent : ReflectionBase.fieldNoReflectionFilter(target.getClass(), dest_parent_field_name);
+		return dest_parent_field_name.equals(default_parent_field_name) ? ClassLoader_$parent : ReflectionBase.fieldNoReflectionFilter(target.getClass(), dest_parent_field_name);
 	}
 
 	/**
@@ -190,27 +201,17 @@ public class KlassLoader {
 		return getClassLoaderParent(target, default_parent_field_name);
 	}
 
-	/**
-	 * 设置Class的classLoader变量
-	 * 
-	 * @param cls
-	 * @param loader
-	 * @return
-	 */
-	public static Class<?> setClassLoader(Class<?> cls, ClassLoader loader) {
-		ObjectManipulator.setObject(cls, Class_f_classLoader, loader);
-		return cls;
+	public static final Class<?> defineClass(ClassLoader loader, String name, byte[] b, int off, int len, ProtectionDomain protectionDomain, String source) throws ClassFormatError {
+		try {
+			return (Class<?>) ClassLoader_defineClass1.invokeExact(loader, name, b, off, len, protectionDomain, source);
+		} catch (Throwable ex) {
+			ex.printStackTrace();
+		}
+		return (Class<?>) HandleBase.UNREACHABLE_REFERENCE;
 	}
 
-	/**
-	 * 不经过安全检查直接获取classLoader
-	 * 
-	 * @param target
-	 * @param parent
-	 * @return
-	 */
-	public static ClassLoader getClassLoader(Class<?> cls) {
-		return (ClassLoader) ObjectManipulator.access(cls, Class_f_classLoader);
+	public static final Class<?> defineClass(Klass.Definition def) throws ClassFormatError {
+		return defineClass(def.loader, def.name, def.b, def.off, def.len, def.pd, def.source);
 	}
 
 	/**
@@ -227,7 +228,7 @@ public class KlassLoader {
 	 */
 	public static final Class<?> defineClass(ClassLoader loader, String name, byte[] b, int off, int len, ProtectionDomain protectionDomain) throws ClassFormatError {
 		try {
-			return (Class<?>) ClassLoader_m_defineClass.invokeExact(loader, name, b, off, len, protectionDomain);
+			return (Class<?>) ClassLoader_defineClass.invokeExact(loader, name, b, off, len, protectionDomain);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -300,7 +301,7 @@ public class KlassLoader {
 	 */
 	public static final Class<?> findClass(ClassLoader loader, String name) throws ClassNotFoundException {
 		try {
-			return (Class<?>) ClassLoader_m_findClass.invokeExact(loader, name);
+			return (Class<?>) ClassLoader_findClass.invokeExact(loader, name);
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
@@ -417,22 +418,5 @@ public class KlassLoader {
 	public static String[] getLoadedPackageNames() {
 		Class<?> caller = JavaLang.getOuterCallerClass();
 		return getLoadedPackageNames(caller.getClassLoader());
-	}
-
-	/**
-	 * 将类设置为系统类
-	 * 
-	 * @param cls
-	 */
-	public static void setAsSystemLoaded(Class<?> cls) {
-		KlassLoader.setClassLoader(cls, null);// 将cls的类加载器设置为BootstrapClassLoader
-	}
-
-	public static void setAsSystemLoaded(Field f) {
-		setAsSystemLoaded(f.getDeclaringClass());
-	}
-
-	public static void setAsSystemLoaded(Executable e) {
-		setAsSystemLoaded(e.getDeclaringClass());
 	}
 }
