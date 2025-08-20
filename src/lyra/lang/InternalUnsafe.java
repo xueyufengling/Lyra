@@ -67,9 +67,12 @@ public final class InternalUnsafe {
 	public static final long INVALID_FIELD_OFFSET = -1;
 
 	public static final int ADDRESS_SIZE;
+
 	public static final int ARRAY_OBJECT_BASE_OFFSET;
 	public static final int ARRAY_OBJECT_INDEX_SCALE;
 
+	public static final int ARRAY_BYTE_BASE_OFFSET;
+	public static final int ARRAY_BYTE_INDEX_SCALE;
 	/**
 	 * OOP大小，只会是4或8.<br>
 	 * 32位JVM和开启压缩OOP的64位JVM上为4，未开启压缩OOP的64位JVM上为8.<br>
@@ -139,6 +142,8 @@ public final class InternalUnsafe {
 		ADDRESS_SIZE = addressSize();
 		ARRAY_OBJECT_BASE_OFFSET = arrayBaseOffset(Object[].class);
 		ARRAY_OBJECT_INDEX_SCALE = arrayIndexScale(Object[].class);
+		ARRAY_BYTE_BASE_OFFSET = arrayBaseOffset(byte[].class);
+		ARRAY_BYTE_INDEX_SCALE = arrayIndexScale(byte[].class);
 		OOP_SIZE = ARRAY_OBJECT_INDEX_SCALE;
 	}
 
@@ -374,6 +379,12 @@ public final class InternalUnsafe {
 		}
 	}
 
+	/**
+	 * 获取数组的数据部分起始地址
+	 * 
+	 * @param arrayClass
+	 * @return
+	 */
 	public static int arrayBaseOffset(Class<?> arrayClass) {
 		try {
 			return (int) arrayBaseOffset.invoke(internalUnsafe, arrayClass);
@@ -559,6 +570,63 @@ public final class InternalUnsafe {
 	}
 
 	/**
+	 * 在字节数组中写入float<br>
+	 * 一般用于操作缓冲区
+	 * 
+	 * @param byteArr
+	 * @param offset
+	 * @param x
+	 */
+	public static void putFloatInByteArray(byte[] byteArr, long arrIdx, float x) {
+		putFloat(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx, x);
+	}
+
+	public static void putIntInByteArray(byte[] byteArr, long arrIdx, int x) {
+		putInt(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx, x);
+	}
+
+	public static void putShortInByteArray(byte[] byteArr, long arrIdx, short x) {
+		putShort(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx, x);
+	}
+
+	public static void putLongInByteArray(byte[] byteArr, long arrIdx, long x) {
+		putLong(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx, x);
+	}
+
+	public static void putDoubleInByteArray(byte[] byteArr, long arrIdx, double x) {
+		putDouble(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx, x);
+	}
+
+	/**
+	 * 在字节数组中读取float<br>
+	 * 一般用于操作缓冲区
+	 * 
+	 * @param byteArr
+	 * @param arrIdx
+	 * @param x
+	 * @return
+	 */
+	public static float getFloatInByteArray(byte[] byteArr, long arrIdx) {
+		return getFloat(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx);
+	}
+
+	public static int getIntInByteArray(byte[] byteArr, long arrIdx) {
+		return getInt(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx);
+	}
+
+	public static short getShortInByteArray(byte[] byteArr, long arrIdx) {
+		return getShort(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx);
+	}
+
+	public static long getLongInByteArray(byte[] byteArr, long arrIdx) {
+		return getLong(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx);
+	}
+
+	public static double getDoubleInByteArray(byte[] byteArr, long arrIdx) {
+		return getDouble(byteArr, ARRAY_BYTE_BASE_OFFSET + arrIdx);
+	}
+
+	/**
 	 * 无视访问权限和修饰符修改Object值，如果是静态成员忽略obj参数.此方法对于HiddenClass和record同样有效
 	 * 
 	 * @param obj   要修改值的对象
@@ -640,6 +708,21 @@ public final class InternalUnsafe {
 			return getLong(obj, objectFieldOffset(f));
 	}
 
+	/**
+	 * 获取指定对象声明的类成员long
+	 * 
+	 * @param obj
+	 * @param field
+	 * @return
+	 */
+	public static long getDeclaredMemberLong(Object obj, String field) {
+		return getLong(obj, objectFieldOffset(obj.getClass(), field));
+	}
+
+	public static void putDeclaredMemberLong(Object obj, String field, long value) {
+		putLong(obj, objectFieldOffset(obj.getClass(), field), value);
+	}
+
 	public static void putBoolean(Object obj, Field field, boolean value) {
 		if (Modifier.isStatic(field.getModifiers()))
 			putBoolean(staticFieldBase(field), staticFieldOffset(field), value);
@@ -717,6 +800,10 @@ public final class InternalUnsafe {
 			return getInt(staticFieldBase(f), staticFieldOffset(f));
 		else
 			return getInt(obj, objectFieldOffset(f));
+	}
+
+	public static int getDeclaredMemberInt(Object obj, String field) {
+		return getInt(obj, objectFieldOffset(obj.getClass(), field));
 	}
 
 	public static void putDouble(Object obj, Field field, double value) {

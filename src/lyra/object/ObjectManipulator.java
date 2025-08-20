@@ -181,6 +181,14 @@ public abstract class ObjectManipulator {
 		return InternalUnsafe.getLong(obj, field);
 	}
 
+	public static long getDeclaredMemberLong(Object obj, String field) {
+		return InternalUnsafe.getDeclaredMemberLong(obj, field);
+	}
+
+	public static void setDeclaredMemberLong(Object obj, String field, long value) {
+		InternalUnsafe.putDeclaredMemberLong(obj, field, value);
+	}
+
 	public static void setBoolean(Object obj, Field field, boolean value) {
 		InternalUnsafe.putBoolean(obj, field, value);
 	}
@@ -211,6 +219,10 @@ public abstract class ObjectManipulator {
 
 	public static void setInt(Object obj, String field, int value) {
 		InternalUnsafe.putInt(obj, field, value);
+	}
+
+	public static int getDeclaredMemberInt(Object obj, String field) {
+		return InternalUnsafe.getDeclaredMemberInt(obj, field);
 	}
 
 	public static void setDeclaredMemberInt(Object obj, String field, int value) {

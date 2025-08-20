@@ -10,8 +10,8 @@ public abstract class InnerKlass {
 	 * 获取指定类型的外部类引用
 	 * 
 	 * @param <T>
-	 * @param target
-	 * @param obj
+	 * @param target 要获取的外部类类型
+	 * @param obj    要获取外部类引用的对象
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
