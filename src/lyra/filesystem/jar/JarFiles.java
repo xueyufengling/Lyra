@@ -106,6 +106,20 @@ public class JarFiles {
 		return getResourceAsBytes(caller, path);// 获取调用该方法的类
 	}
 
+	public static InputStream getResourceAsStream(Class<?> any_class_in_jar, String path) {
+		try {
+			return any_class_in_jar.getResource(path).openStream();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+	public static InputStream getResourceAsStream(String path) {
+		Class<?> caller = JavaLang.getOuterCallerClass();
+		return getResourceAsStream(caller, path);// 获取调用该方法的类
+	}
+
 	/**
 	 * 从JarFile中读取资源
 	 * 
