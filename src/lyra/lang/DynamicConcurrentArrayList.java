@@ -67,4 +67,8 @@ public class DynamicConcurrentArrayList<T> {
 	public void clear() {
 		unprocessed.clear();
 	}
+
+	public int size() {
+		return unprocessed.size() + processed.size();
+	}
 }
